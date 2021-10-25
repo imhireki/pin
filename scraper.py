@@ -25,6 +25,7 @@ driver = webdriver.Firefox(
 
 driver.get(url)
 
+# scroll down on selenium
 def scroller(scrolls=2): 
     scroll = 0
     while scroll < scrolls:
@@ -35,11 +36,20 @@ def scroller(scrolls=2):
         time.sleep(5)
         scroll += 1
 
-# TODO: GET URL FROM THE PINTEREST PINS ON THE .Collection
+# append data to my json data
+def write_to_json(data):
+    w_file = open('data.json', 'w')
+    json.dump(json_data, w_file, indent=4)
+    w_file.close() 
+
+# return my json data
+def current_json_data():  
+    r_file = open('data.json', 'r')
+    json_data = json.load(r_file)
+    r_file.close()
+    return json_data
 
 try:
-    scroller(5)
-
     # GET THE COLLECTION
     collection = WebDriverWait(driver, 5).until(
         EC.presence_of_element_located(
@@ -66,8 +76,14 @@ try:
     
     # GO TO EACH URL TO GET DATA
     for url in PIN_URLS:
-        driver.get(url)
 
+        json_data = current_json_data()
+
+        # if url already in data, go to next url
+        if json_data.get(url):
+            continue
+
+        driver.get(url)
         URL_DATA = {}
          
         # html section
@@ -121,10 +137,11 @@ try:
             ).get_attribute('outerHTML')
         
         img_element_soup = BeautifulSoup(img_element, 'html.parser')
-        URL_DATA['url'] = img_element_soup.img.get('src')
+        URL_DATA['image'] = img_element_soup.img.get('src')
         
-        print(URL_DATA)
-
+        # append data to json
+        json_data[url] = URL_DATA
+        write_to_json(json_data)
 
 except Exception as e:
     print(e)
