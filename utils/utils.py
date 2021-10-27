@@ -19,15 +19,12 @@ def setup_driver():
         options=driver_options
         )
 
-def scroller(scrolls=2): 
-    scroll = 0
-    while scroll < scrolls:
-        # Scroll down to bottom
-        driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);"
-            )
-        time.sleep(5)
-        scroll += 1
+def scroller(driver): 
+    # Scroll down to bottom
+    driver.execute_script(
+        "window.scrollTo(0, document.body.scrollHeight);"
+        )
+    time.sleep(10)
 
 def write_to_json(data):
     w_file = open('data.json', 'w')
@@ -41,11 +38,15 @@ def current_json_data():
     return json_data
 
 def get_searched_links(driver):
-    collection = WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'div.Collection')
-            )
-        ).get_attribute('outerHTML')
+    try:
+        collection = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'div.Collection')
+                )
+            ).get_attribute('outerHTML')
+    except Exception:
+        return []
+
     collection_soup = BeautifulSoup(collection, 'html.parser')
     
     # RETURN THE URLS
@@ -59,36 +60,48 @@ def get_searched_links(driver):
         url = f'{PINTEREST_URL}{pin_href}' 
         pin_urls.append(url)
    
-    # PIN_URLS = [PIN_URLS[0], PIN_URLS[1]]
     return pin_urls
 
 def get_title_subtitle_section(driver): 
-    data_section = WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'div.rDA:nth-child(1)')
-            )
-        ).get_attribute('outerHTML')
-    return BeautifulSoup(data_section, 'html.parser')
+    try:
+        return WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'div.rDA:nth-child(1)')
+                )
+            ).get_attribute('outerHTML')
+    except Exception:
+        return None
 
-def get_title(soup):
-    title = soup.h1.string
+def get_title(section):
+    if not section:
+        return '' 
+
+    title = BeautifulSoup(section, 'html.parser').h1.string
     return [title if title != 'requests are open!' else ''][0] 
 
-def get_subtitle(soup):
-    subtitle = soup.h2.string 
+def get_subtitle(section):
+    if not section:
+        return '' 
+
+    subtitle = BeautifulSoup(section, 'html.parser').h2.string
     return [subtitle if subtitle != ' ' else ''][0]
 
 def get_tags_section(driver): 
-    tags_section = WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div[2]/div/div/'\
-                       'div/div[2]/div/div/div/div/div[2]/div/div/div/div[7]')
-            )
-        ).get_attribute('outerHTML')
-    return BeautifulSoup(tags_section, 'html.parser')
+    try:
+        return WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(
+                (By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div[2]/div/div/'\
+                           'div/div[2]/div/div/div/div/div[2]/div/div/div/div[7]')
+                )
+            ).get_attribute('outerHTML')
+    except Exception:
+        return None
 
-def get_tags(soup):
-    a_tags = soup.find_all('a')
+def get_tags(section):
+    if not section:
+        return []
+
+    a_tags = BeautifulSoup(section, 'html.parser').find_all('a')
     tags = []
     for tag in a_tags:
         tag_soup = BeautifulSoup(str(tag), 'html.parser')
@@ -96,13 +109,18 @@ def get_tags(soup):
     return tags     
 
 def get_image_section(driver):
-    img_element = WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR,'.PcK > div:nth-child(1) > img:nth-child(1)')
-            )
-        ).get_attribute('outerHTML')
-    return BeautifulSoup(img_element, 'html.parser')
+    try:
+        return WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR,'.PcK > div:nth-child(1) > img:nth-child(1)')
+                )
+            ).get_attribute('outerHTML')
+    except Exception:
+        return None
 
-def get_image(soup):
-    return soup.img.get('src')
+def get_image(section):
+    if not section:
+        return ''
+
+    return BeautifulSoup(section, 'html.parser').img.get('src')
 

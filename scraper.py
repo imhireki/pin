@@ -11,42 +11,65 @@ if __name__ == '__main__':
     driver.get(url)
 
     try:
-        pin_urls = utils.get_searched_links(driver)
+        scrolls = 3 
+        pin_urls = []
+        used_pin_urls = []
 
-        # Loop thru the urls to get data
-        for url in pin_urls: 
-            json_data = utils.current_json_data()
+        while scrolls > 0:
+            # Getter
+            _pin_urls = utils.get_searched_links(driver)
 
-            # if url already in data, go to next url
-            if json_data.get(url):
-                continue
+            # Setter
+            pin_urls = [
+                pin
+                for pin in _pin_urls
+                if pin not in used_pin_urls
+                ] 
+                        
+            # Loop thru the urls to get data
+            for pin_url in pin_urls:
 
-            driver.get(url)
+                # get data
+                json_data = utils.current_json_data()
 
-            # Get the datas 
-            titles_soup = utils.get_title_subtitle_section(driver)
-            title = utils.get_title(titles_soup)
-            subtitle = utils.get_subtitle(titles_soup)
+                # if url already in data, go to next url
+                if json_data.get(pin_url):
+                    continue
+
+                driver.get(pin_url)
+
+                # Get the datas 
+                titles_soup = utils.get_title_subtitle_section(driver)
+                title = utils.get_title(titles_soup)
+                subtitle = utils.get_subtitle(titles_soup)
+                
+                tags_soup = utils.get_tags_section(driver)
+                tags = utils.get_tags(tags_soup)
+
+                image_soup = utils.get_image_section(driver)
+                image = utils.get_image(image_soup)
+
+                url_data = {
+                    'title': title,
+                    'subtitle': subtitle,
+                    'tags': tags,
+                    'image': image,
+                    }
+
+                # append data to json
+                json_data[pin_url] = url_data 
+                utils.write_to_json(json_data)
+                # // End loop For(get data at list of urls)
+
+            for pin in pin_urls:
+                used_pin_urls.append(pin)
+                
+            utils.scroller(driver=driver)
+            scrolls -= 1
+            # // End loop while (scrolls)
             
-            tags_soup = utils.get_tags_section(driver)
-            tags = utils.get_tags(tags_soup)
-
-            image_soup = utils.get_image_section(driver)
-            image = utils.get_image(image_soup)
-
-            url_data = {
-                'title': title,
-                'subtitle': subtitle,
-                'tags': tags,
-                'image': image,
-                }
-
-            # append data to json
-            json_data[url] = url_data 
-            utils.write_to_json(json_data)
-
     except Exception as e:
         print(e)
-    
+
     driver.quit()
 
