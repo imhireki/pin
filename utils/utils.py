@@ -19,12 +19,14 @@ def setup_driver():
         options=driver_options
         )
 
-def scroller(driver): 
-    # Scroll down to bottom
-    driver.execute_script(
-        "window.scrollTo(0, document.body.scrollHeight);"
-        )
-    time.sleep(10)
+def scroller(driver, scrolls): 
+    while scrolls > 1:
+        # Scroll down to bottom
+        driver.execute_script(
+            "window.scrollTo(0, document.body.scrollHeight);"
+            )
+        time.sleep(10)
+        scrolls -= 1
 
 def write_to_json(data):
     w_file = open('data.json', 'w')
@@ -39,30 +41,29 @@ def current_json_data():
 
 def get_searched_links(driver):
     try:
-        collection = WebDriverWait(driver, 5).until(
+        collection = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div.Collection')
                 )
             ).get_attribute('outerHTML')
     except Exception:
-        return []
+        raise Exception('Problem getting the links')
 
+    # soup
     collection_soup = BeautifulSoup(collection, 'html.parser')
-    
-    # RETURN THE URLS
     link_tags = collection_soup.find_all('a')
 
     PINTEREST_URL = 'https://br.pinterest.com'
     pin_urls = []
 
+    # append urls to pin_urls
     for link in link_tags:
         pin_href = link.get('href')
         url = f'{PINTEREST_URL}{pin_href}' 
         pin_urls.append(url)
-   
     return pin_urls
 
-def get_title_subtitle_section(driver): 
+def get_titles_section(driver): 
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
@@ -74,24 +75,26 @@ def get_title_subtitle_section(driver):
 
 def get_title(section):
     if not section:
-        return '' 
-
-    title = BeautifulSoup(section, 'html.parser').h1.string
-    return [title if title != 'requests are open!' else ''][0] 
+        return ''
+    return BeautifulSoup(section, 'html.parser').h1.string
 
 def get_subtitle(section):
     if not section:
-        return '' 
-
-    subtitle = BeautifulSoup(section, 'html.parser').h2.string
-    return [subtitle if subtitle != ' ' else ''][0]
+        return ''
+    
+    soup = BeautifulSoup(section, 'html.parser')
+    try:
+        return soup.h2.string
+    except Exception as e:
+        return ''
 
 def get_tags_section(driver): 
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div[2]/div/div/'\
-                           'div/div[2]/div/div/div/div/div[2]/div/div/div/div[7]')
+                (By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div[2]/di'\
+                           'v/div/div/div[2]/div/div/div/div/div[2]/div/di'\
+                           'v/div/div[7]')
                 )
             ).get_attribute('outerHTML')
     except Exception:
@@ -112,7 +115,8 @@ def get_image_section(driver):
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR,'.PcK > div:nth-child(1) > img:nth-child(1)')
+                (By.CSS_SELECTOR, '.PcK > div:nth-child(1)'\
+                                  ' > img:nth-child(1)')
                 )
             ).get_attribute('outerHTML')
     except Exception:
@@ -121,6 +125,43 @@ def get_image_section(driver):
 def get_image(section):
     if not section:
         return ''
+    return BeautifulSoup(section, 'html.parser').img.get('src', '')
 
-    return BeautifulSoup(section, 'html.parser').img.get('src')
+def validate_data(data):
+    """ errors if not img and not title """
+    # def data
+    title = data.get('title', '')
+    subtitle = data.get('subtitle', '') 
+    tags = data.get('tags', [])
+    image = data.get('image', '')
+    errors = {}
 
+    # Check / patch data - TODO: Update it to regex
+    if title == 'requests are open!':  # pinterest placeholder
+        title = ''
+     
+    if subtitle == ' ' or subtitle == None:
+        subtitle = ''
+     
+    if not image:
+        errors['image'] = 'lack in image'
+
+    # Try patch the title
+    if not title:
+        if subtitle:
+            title = subtitle
+        elif tags:
+            title = tags[0] 
+        else:
+            errors['title'] = 'lack in title'
+             
+    # Join the new data
+    cleaned_data = {
+        'title': title,
+        'subtitle': subtitle,
+        'tags': tags,
+        'image': image
+        }
+    
+    return cleaned_data, errors   
+ 

@@ -1,45 +1,46 @@
 from utils import utils 
 
 
-if __name__ == '__main__':
+#  \ - - - |\ BASIC STRUCTURE /| - - - - /
+#   TODO: for pinterest search urls
+#       while scrolls
+#           for pin url in search urls
+#               get data url 
 
-    url = 'https://br.pinterest.com/search/pins/?q=roronoa%20zoro%20icons'\
-          '&rs=typed&term_meta[]=roronoa%7Ctyped&term_meta[]=zoro%7Ctyped'\
-          '&term_meta[]=icons%7Ctyped'
+
+if __name__ == '__main__':
+    url = 'https://br.pinterest.com/search/pins/?q=anime%20icon%20profile%20pictur&rs=typed&term_meta[]=anime%7Ctyped&term_meta[]=icon%7Ctyped&term_meta[]=profile%7Ctyped&term_meta[]=pictur%7Ctyped'
 
     driver = utils.setup_driver()
-    driver.get(url)
-
+    
     try:
-        scrolls = 3 
+        scrolls = 5 
         pin_urls = []
-        used_pin_urls = []
+        sum_scrolls = 1 
+        json_data = utils.current_json_data() 
+        used_pin_urls = list(json_data.keys())
 
         while scrolls > 0:
-            # Getter
+            driver.get(url)
+            utils.scroller(driver, sum_scrolls)
+
+            # urls pins getter
             _pin_urls = utils.get_searched_links(driver)
 
-            # Setter
+            # urls pins setter
             pin_urls = [
                 pin
                 for pin in _pin_urls
                 if pin not in used_pin_urls
                 ] 
-                        
+
             # Loop thru the urls to get data
             for pin_url in pin_urls:
-
-                # get data
-                json_data = utils.current_json_data()
-
-                # if url already in data, go to next url
-                if json_data.get(pin_url):
-                    continue
-
+                used_pin_urls.append(pin_url)
                 driver.get(pin_url)
 
-                # Get the datas 
-                titles_soup = utils.get_title_subtitle_section(driver)
+                # Get the data
+                titles_soup = utils.get_titles_section(driver)
                 title = utils.get_title(titles_soup)
                 subtitle = utils.get_subtitle(titles_soup)
                 
@@ -55,18 +56,18 @@ if __name__ == '__main__':
                     'tags': tags,
                     'image': image,
                     }
+                
+                # Patch or exclude invalid / not good data
+                cleaned_data, errors = utils.validate_data(url_data)
+                if errors:
+                    continue
 
                 # append data to json
-                json_data[pin_url] = url_data 
+                json_data[pin_url] = cleaned_data 
                 utils.write_to_json(json_data)
-                # // End loop For(get data at list of urls)
-
-            for pin in pin_urls:
-                used_pin_urls.append(pin)
                 
-            utils.scroller(driver=driver)
             scrolls -= 1
-            # // End loop while (scrolls)
+            sum_scrolls +=  1
             
     except Exception as e:
         print(e)
