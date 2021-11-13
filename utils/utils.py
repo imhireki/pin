@@ -9,6 +9,7 @@ import requests
 import pandas
 import time
 import json
+import re
 
 
 def setup_driver():
@@ -39,11 +40,33 @@ def current_json_data():
     r_file.close()
     return json_data
 
+def perform_login(driver):
+    login_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, 'div.Eqh:nth-child(3) > div:nth-child(1) > button:nth-child(1)')
+            )
+        ).click()
+
+    email_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, '#email')
+            )
+        )
+    password_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, '#password')
+            )
+        ) 
+    
+    email_input.send_keys('f9c10a89b0@emailnax.com')
+    password_input.send_keys('teste123', Keys.ENTER)
+    time.sleep(10) 
+
 def get_searched_links(driver):
     try:
         collection = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, 'div.Collection')
+                (By.CSS_SELECTOR, 'div.vbI:nth-child(1)')
                 )
             ).get_attribute('outerHTML')
     except Exception:
@@ -59,15 +82,20 @@ def get_searched_links(driver):
     # append urls to pin_urls
     for link in link_tags:
         pin_href = link.get('href')
+
+        if not 'pin' in pin_href:
+            continue
+
         url = f'{PINTEREST_URL}{pin_href}' 
         pin_urls.append(url)
+
     return pin_urls
 
-def get_titles_section(driver): 
+def get_title_section(driver): 
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, 'div.rDA:nth-child(1)')
+                (By.CSS_SELECTOR, 'h1.lH1')
                 )
             ).get_attribute('outerHTML')
     except Exception:
@@ -78,62 +106,68 @@ def get_title(section):
         return ''
     return BeautifulSoup(section, 'html.parser').h1.string
 
-def get_subtitle(section):
-    if not section:
-        return ''
-    
-    soup = BeautifulSoup(section, 'html.parser')
-    try:
-        return soup.h2.string
-    except Exception as e:
-        return ''
-
-def get_tags_section(driver): 
+def get_subtitle_section(driver): 
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div[2]/di'\
-                           'v/div/div/div[2]/div/div/div/div/div[2]/div/di'\
-                           'v/div/div[7]')
+                (By.CSS_SELECTOR, 'div.FNs:nth-child(2) > span:nth-child(1)')
                 )
             ).get_attribute('outerHTML')
     except Exception:
         return None
 
-def get_tags(section):
+def get_subtitle(section):
     if not section:
-        return []
-
-    a_tags = BeautifulSoup(section, 'html.parser').find_all('a')
-    tags = []
-    for tag in a_tags:
-        tag_soup = BeautifulSoup(str(tag), 'html.parser')
-        tags.append(tag_soup.a.string) 
-    return tags     
+        return ''
+    soup = BeautifulSoup(section, 'html.parser')
+    try:
+        return soup.span.string
+    except Exception as e:
+        return ''
 
 def get_image_section(driver):
     try:
         return WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, '.PcK > div:nth-child(1)'\
-                                  ' > img:nth-child(1)')
+                (By.CSS_SELECTOR, '.OVX > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)')
                 )
             ).get_attribute('outerHTML')
+
     except Exception:
         return None
 
 def get_image(section):
     if not section:
-        return ''
-    return BeautifulSoup(section, 'html.parser').img.get('src', '')
+        return []
+    
+    img = BeautifulSoup(section, 'html.parser').find('img')
+
+    if img:
+        src = img.get('src')
+        return [src]
+
+    # DEAL WITH STYLE IMAGES
+    soup = BeautifulSoup(section, 'html.parser')
+    
+    urls = []
+    for div in soup.find_all('div'):
+        style = div.get('style', '')
+        _url = re.search("http.*[)]", style)
+
+        if not _url:
+            continue
+         
+        url = style[_url.start():_url.end()-2] 
+        urls.append(url)
+    
+    return urls
 
 def validate_data(data):
     """ errors if not img and not title """
     # def data
     title = data.get('title', '')
     subtitle = data.get('subtitle', '') 
-    tags = data.get('tags', [])
-    image = data.get('image', '')
+    image = data.get('image', [])
     errors = {}
 
     # Check / patch data - TODO: Update it to regex
@@ -150,8 +184,6 @@ def validate_data(data):
     if not title:
         if subtitle:
             title = subtitle
-        elif tags:
-            title = tags[0] 
         else:
             errors['title'] = 'lack in title'
              
@@ -159,7 +191,6 @@ def validate_data(data):
     cleaned_data = {
         'title': title,
         'subtitle': subtitle,
-        'tags': tags,
         'image': image
         }
     

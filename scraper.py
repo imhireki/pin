@@ -1,26 +1,22 @@
-from utils import utils 
-
-
-#  \ - - - |\ BASIC STRUCTURE /| - - - - /
-#   TODO: for pinterest search urls
-#       while scrolls
-#           for pin url in search urls
-#               get data url 
-
+from utils import utils
 
 if __name__ == '__main__':
-    url = 'https://br.pinterest.com/search/pins/?q=anime%20icon%20profile%20pictur&rs=typed&term_meta[]=anime%7Ctyped&term_meta[]=icon%7Ctyped&term_meta[]=profile%7Ctyped&term_meta[]=pictur%7Ctyped'
+    url = 'https://br.pinterest.com/search/pins/?q=roronoa%20zoro%20icons&rs=typed&term_meta[]=roronoa%7Ctyped&term_meta[]=zoro%7Ctyped&term_meta[]=icons%7Ctyped'
+    
+    url = 'https://br.pinterest.com/search/pins/?q=anime%20icon&rs=typed&term_meta[]=anime%7Ctyped&term_meta[]=icon%7Ctyped'
 
     driver = utils.setup_driver()
-    
+    driver.get(url)
+    utils.perform_login(driver)
+
     try:
-        scrolls = 5 
+        scrolls = 1 
         pin_urls = []
         sum_scrolls = 1 
         json_data = utils.current_json_data() 
         used_pin_urls = list(json_data.keys())
 
-        while scrolls > 0:
+        while scrolls < 5:
             driver.get(url)
             utils.scroller(driver, sum_scrolls)
 
@@ -40,25 +36,24 @@ if __name__ == '__main__':
                 driver.get(pin_url)
 
                 # Get the data
-                titles_soup = utils.get_titles_section(driver)
-                title = utils.get_title(titles_soup)
-                subtitle = utils.get_subtitle(titles_soup)
+                title_soup = utils.get_title_section(driver)
+                title = utils.get_title(title_soup)
                 
-                tags_soup = utils.get_tags_section(driver)
-                tags = utils.get_tags(tags_soup)
-
+                subtitle_soup = utils.get_subtitle_section(driver)
+                subtitle = utils.get_subtitle(subtitle_soup)
+                
                 image_soup = utils.get_image_section(driver)
                 image = utils.get_image(image_soup)
 
                 url_data = {
                     'title': title,
                     'subtitle': subtitle,
-                    'tags': tags,
                     'image': image,
                     }
                 
                 # Patch or exclude invalid / not good data
                 cleaned_data, errors = utils.validate_data(url_data)
+
                 if errors:
                     continue
 
