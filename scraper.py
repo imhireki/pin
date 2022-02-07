@@ -1,82 +1,42 @@
-from utils import utils
+#!/usr/bin/env python3
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium import webdriver
 
-if __name__ == '__main__':
-    urls = [
-        'https://br.pinterest.com/search/pins/?q=anime%20pfp&rs=typed&term_meta[]=anime%7Ctyped&term_meta[]=pfp%7Ctyped',
-        'https://br.pinterest.com/search/pins/?q=anime%20profile%20picture&rs=typed&term_meta[]=anime%7Ctyped&term_meta[]=profile%7Ctyped&term_meta[]=picture%7Ctyped',
-        'https://br.pinterest.com/search/pins/?q=profile%20pic%20anime&rs=typed&term_meta[]=profile%7Ctyped&term_meta[]=pic%7Ctyped&term_meta[]=anime%7Ctyped',
-        'https://br.pinterest.com/search/pins/?q=profile%20pic%20anime%20border&rs=typed&term_meta[]=profile%7Ctyped&term_meta[]=pic%7Ctyped&term_meta[]=anime%7Ctyped&term_meta[]=border%7Ctyped'
-        ]
+# Typing Hint
+from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from selenium.webdriver.remote.webelement import WebElement
+from typing import List
 
-    try:
+from time import sleep
+from os import getenv
 
-        for url in urls:
-            driver = utils.setup_driver()
-            driver.get(url)
 
-            if urls[0]:
-                utils.perform_login(driver)
+class Browser:
+    """ Setup driver and perform actions on it """
+    def __init__(self):
+        self.driver = self._driver()
 
-            scrolls = 1 
-            pin_urls = []
-            sum_scrolls = 1 
-            json_data = utils.current_json_data() 
-            used_pin_urls = list(json_data.keys())
+    @staticmethod
+    def _driver() -> ChromiumDriver:
+        """ Return a configured ChromiumDriver"""
+        driver_options = webdriver.ChromeOptions()
+        driver_options.headless = False
+        return webdriver.Chrome(options=driver_options)
 
-            while scrolls < 2:
-                driver.get(url)
-                utils.scroller(driver, sum_scrolls)
 
-                # urls pins getter
-                _pin_urls = utils.get_searched_links(driver)
-
-                # urls pins setter
-                pin_urls = [
-                    pin
-                    for pin in _pin_urls
-                    if pin not in used_pin_urls
-                    ] 
-
-                # Loop thru the urls to get data
-                for pin_url in pin_urls:
-                    used_pin_urls.append(pin_url)
-                    driver.get(pin_url)
-
-                    # Get the data
-                    title_soup = utils.get_title_section(driver)
-                    title = utils.get_title(title_soup)
-                    
-                    subtitle_soup = utils.get_subtitle_section(driver)
-                    subtitle = utils.get_subtitle(subtitle_soup)
-                    
-                    image_soup = utils.get_image_section(driver)
-                    image = utils.get_image(image_soup)
-
-                    url_data = {
-                        'title': title,
-                        'subtitle': subtitle,
-                        'image': image,
-                        }
-                    
-                    # Patch or exclude invalid / not good data
-                    cleaned_data, errors = utils.validate_data(url_data)
-
-                    if errors:
-                        continue
-
-                    # append data to json
-                    json_data[pin_url] = cleaned_data 
-                    utils.write_to_json(json_data)
-                    
-                scrolls -= 1
-                sum_scrolls +=  1
-            
-    except Exception as e:
-        raise e
-    
-    except KeyboardInterrupt:
-        pass
-    
-    finally:
-        driver.quit()
+    def scroll(self, times:int=1, timeout:float=10.0):
+        """ Scroll to the bottom of the site iterating over `times`
+        args
+        ----
+        times -- number of times driver is gonna scroll (default 1)
+        timeout -- timeout between scrolls (default 10.0)
+        """
+        for time in range(times):
+            self.driver.execute_script(
+                'window.scrollTo(0, document.body.scrollHeight);'
+            )
+            sleep(timeout)
 
