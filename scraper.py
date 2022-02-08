@@ -40,3 +40,32 @@ class Browser:
             )
             sleep(timeout)
 
+
+class WebSite:
+    ENDPOINT_SEARCH = 'https://www.pinterest.com/search/pins/?q='
+
+    ELEMENT_LOGIN_BUTTON = 'div.Eqh:nth-child(3) > div:nth-child(1) > button:nth-child(1)'
+    ELEMENT_EMAIL_INPUT = '#email'
+    ELEMENT_PASSWORD_INPUT = '#password'
+
+    """ Get elements on the HTML of the website """
+    def __init__(self, driver):
+        self.driver = driver
+
+    def get_element(self,
+             element:str,
+             timeout:float=10.0,
+             condition:EC=EC.presence_of_element_located,
+             locator:By=By.CSS_SELECTOR) -> WebElement:
+        """ Return a WebElement (wrapper of WebDriverWait)
+        args
+        ----
+        element -- element to search for
+        timeout -- timeout to search for the element (default 10.0)
+        condition -- expected condition (default: EC.presence_of_element_located)
+        locator -- locator to search the element (deffault: By.CSS_SELECTOR)
+        """
+        return WebDriverWait(self.driver, timeout).until(
+            condition((locator, element))
+            )
+
