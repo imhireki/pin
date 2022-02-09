@@ -5,13 +5,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 
-# Typing Hint
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webelement import WebElement
-from typing import List
+from typing import List, Dict, Union
 
+from bs4 import BeautifulSoup
 from time import sleep
 from os import getenv
+import re
 
 
 class Browser:
