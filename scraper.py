@@ -131,16 +131,35 @@ class Client:
 
         sleep(timeout)
 
-    def lookup_urls(self):
-        """ Go to each search url, perform login and scroll over them """
+    def _pins(self):
+        """ Return pins from the current driver's page """
 
-        for url in self.search_urls:
+        # links(<a>) in ELEMENT_PINS
+        links_soup = self.site.html_soup(self.site.ELEMENT_PINS).find_all('a')
+
+        # ENDPOINT_HOME/pin/id. if 'pin' in the src of the link.
+        return [
+            '{}{}'.format(self.site.ENDPOINT_HOME, link.get('href'))
+            for link in links_soup
+            if 'pin' in link.get('href')
+        ]
+
+    def pins(self) -> Dict[str, list]:
+        """ Go to each search url, perform login, scroll, and return its pins """
+
+        pins = {}  # type: Dict[str, list]
+
+        # Loop thru the queries
+        for url in self.query_urls:
             self.driver.get(url)
 
-            if url == self.search_urls[0]:
+            if url == self.query_urls[0]:  # Login on the first url
                 self.login()
 
-            self.browser.scroll(2)
+            # self.used_pins = ... NOTE: requires db data
+            pins[url] = self._pins()
+
+        return pins
 
 
 if __name__ == '__main__':
