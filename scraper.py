@@ -60,7 +60,15 @@ class WebSite:
     def __init__(self, driver):
         self.driver = driver
 
-    def get_element(self,
+    def html_soup(self, element:str, **kwargs):
+        """ Return an object of BeautifulSoup parsed as HTML """
+        return BeautifulSoup(self.html(element, **kwargs), 'html.parser')
+
+    def html(self, element:str, **kwargs):
+        """ Return the HTML of the an `element` """
+        return self.web_element(element, **kwargs).get_attribute('outerHTML')
+
+    def web_element(self,
              element:str,
              timeout:float=10.0,
              condition:EC=EC.presence_of_element_located,
