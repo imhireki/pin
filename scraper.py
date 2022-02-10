@@ -161,6 +161,15 @@ class Client:
 
         return pins
 
+    def pin(self, pins:Dict[str, list]):
+        """ Loop thru the pins, getting its data """
+
+        for query_url in pins.keys():  #  url which the pins where found at
+            for pin in pins.get(query_url):
+                self.driver.get(pin)
+
+                data = PinData(self.site).data
+
 
 if __name__ == '__main__':
     client = None
