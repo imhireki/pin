@@ -93,29 +93,24 @@ class Client:
         self.browser = Browser()
         self.driver = self.browser.driver
         self.site = WebSite(self.browser.driver)
-        self.search_urls = self._search_urls(queries)
+        self.query_urls = self._query_urls(queries)
 
-    def _search_urls(self, queries:List[str]) -> List[str]:
-        """ Return a list of urls using the content inside `queries`
-
-        args:
-        -------
-        queries -- list of strings used for search icons
-        """
-        search_urls = []
+    def _query_urls(self, queries:List[str]) -> List[str]:
+        """ Return a list of urls using the content inside `queries` """
+        query_urls = []
         for query in queries:
-            words = query.split(' ')
+            words = query.split(' ')  # type: List[str]
             url = self.site.ENDPOINT_SEARCH
 
-            # ?q=word+word+word
+            # ?q=word+word...
             for c, word in enumerate(words):
                 if c != 0:
-                    url += f'+{word}'
+                    url += f'+{word}'  # ?q=word+word...
                 else:
-                    url += word
-            search_urls.append(url)
+                    url += word  # ?q=word
+            query_urls.append(url)
 
-        return search_urls
+        return query_urls
 
     def login(self, timeout:float=10.0):
         """ Perform login
