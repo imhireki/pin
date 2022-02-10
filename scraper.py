@@ -113,19 +113,19 @@ class Client:
         return query_urls
 
     def login(self, timeout:float=10.0):
-        """ Perform login
-        args
-        ----
-        timeout -- timeout after login (default 10.0)
-        """
-        login_button = self.site.get_element(
+        """ Perform login using enviroment keys """
+
+        # Go to the login form
+        login_button = self.site.web_element(
             element=self.site.ELEMENT_LOGIN_BUTTON,
             condition=EC.element_to_be_clickable,
             ).click()
 
-        email_input = self.site.get_element(self.site.ELEMENT_EMAIL_INPUT)
-        password_input = self.site.get_element(self.site.ELEMENT_PASSWORD_INPUT)
+        # Get the fields elements
+        email_input = self.site.web_element(self.site.ELEMENT_EMAIL_INPUT)
+        password_input = self.site.web_element(self.site.ELEMENT_PASSWORD_INPUT)
 
+        # Send the enviroment keys's credentials for its fields
         email_input.send_keys(getenv('PINTEREST_EMAIL'))
         password_input.send_keys(getenv('PINTEREST_PASSWORD'), Keys.ENTER)
 
