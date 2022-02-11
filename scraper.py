@@ -9,9 +9,12 @@ from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webelement import WebElement
 from typing import List, Dict, Union
 
+from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
 from time import sleep
 from os import getenv
+import json
+import os
 import re
 
 
@@ -24,7 +27,7 @@ class Browser:
     def _driver() -> ChromiumDriver:
         """ Return a configured ChromiumDriver"""
         driver_options = webdriver.ChromeOptions()
-        driver_options.headless = False
+        driver_options.headless = True
         return webdriver.Chrome(options=driver_options)
 
 
@@ -43,7 +46,7 @@ class Browser:
 
 
 class WebSite:
-    """ Handle elements on the HTML of the website """
+    """ Deal with elements on the HTML of the website """
     ENDPOINT_SEARCH = 'https://www.pinterest.com/search/pins/?q='
     ENDPOINT_HOME = 'https://br.pinterest.com'
 
@@ -87,7 +90,7 @@ class WebSite:
 
 
 class PinData:
-    """ Handle the data inside a pin """
+    """ Deal with the data inside a pin """
 
     def __init__(self, site):
         self.site = site
@@ -146,6 +149,41 @@ class PinData:
     def patch_data(self):
         """ Return the patched data or None """
         pass
+
+
+class Storage(ABC):
+    @abstractmethod
+    def insert(self): pass
+
+    @abstractmethod
+    def select(self): pass
+
+
+class JsonFile(Storage):
+    """ Deal with the storage using a Json file """
+
+    def __init__(self, filename:str):
+        self.filename = filename
+
+    def insert(self, data:Dict[str, Union[str, list]]):
+        """ Append the data to `self.filename` """
+
+        json_data = self.select()
+        json_data.update(data)
+
+        json_file = open(self.filename, 'w')
+        json.dump(obj=json_data, fp=json_file, indent=4)
+        json_file.close()
+
+    def select(self) -> Dict[str, Union[str, list]]:
+        """ Return all the data from the `self.filename` file """
+        if not os.path.exists(self.filename):
+            return {}  # the file is created just on insert()
+
+        json_file = open(self.filename, 'r')
+        json_data = json.load(json_file).keys()
+        json_file.close()
+        return json_data
 
 
 class Client:
@@ -231,6 +269,7 @@ class Client:
                 self.driver.get(pin)
 
                 data = PinData(self.site).data
+                print(data)
 
 
 if __name__ == '__main__':
@@ -238,14 +277,13 @@ if __name__ == '__main__':
 
     try:
         client = Client(
-            queries=['Kusanagi Motoko', 'anime icons'],
+            queries=['Kusanagi Motoko'],
             scrolls=1
         )
-        client.lookup_urls()
+        pins = client.pins()
+        pin = client.pin(pins)
 
     except Exception as e:
         raise e
     except KeyboardInterrupt:
         pass
-    finally:
-        client.driver.quit()
