@@ -25,18 +25,19 @@ class Browser:
 
     @staticmethod
     def _driver() -> ChromiumDriver:
-        """ Return a configured ChromiumDriver"""
+        """ Return a configured ChromiumDriver """
         driver_options = webdriver.ChromeOptions()
-        driver_options.headless = True
+        driver_options.headless = False
         return webdriver.Chrome(options=driver_options)
 
 
     def scroll(self, times:int=1, timeout:float=10.0):
         """ Scroll to the bottom of the site iterating over `times`
-        args
-        ----
-        times -- number of times driver is gonna scroll (default 1)
-        timeout -- timeout between scrolls (default 10.0)
+
+        Args:
+            times: how much the driver is gonna scroll to the bottom
+                of the page.
+            timeout: time between the each scroll
         """
         for time in range(times):
             self.driver.execute_script(
@@ -151,7 +152,7 @@ class PinData:
         pass
 
 
-class Storage(ABC):
+class _Storage(ABC):
     @abstractmethod
     def insert(self): pass
 
@@ -159,7 +160,7 @@ class Storage(ABC):
     def select(self): pass
 
 
-class JsonFile(Storage):
+class JsonFile(_Storage):
     """ Deal with the storage using a Json file """
 
     def __init__(self, filename:str):
@@ -177,13 +178,19 @@ class JsonFile(Storage):
 
     def select(self) -> Dict[str, Union[str, list]]:
         """ Return all the data from the `self.filename` file """
+
         if not os.path.exists(self.filename):
             return {}  # the file is created just on insert()
 
         json_file = open(self.filename, 'r')
-        json_data = json.load(json_file).keys()
+        json_data = json.load(json_file)
         json_file.close()
         return json_data
+
+class Storage:
+    @staticmethod
+    def json(filename):
+        return JsonFile(filename)
 
 
 class Client:
@@ -231,18 +238,24 @@ class Client:
 
         sleep(timeout)
 
+
     def _pins(self) -> List[str]:
         """ Return pins from the current driver's page """
 
         # links(<a>) in ELEMENT_PINS
         links_soup = self.site.html_soup(self.site.ELEMENT_PINS).find_all('a')
 
-        # ENDPOINT_HOME/pin/id. if 'pin' in the src of the link.
-        return [
+        found_pins = [
             '{}{}'.format(self.site.ENDPOINT_HOME, link.get('href'))
             for link in links_soup
-            if 'pin' in link.get('href')
+            if re.search('^/pin/[0-9]+/$', link.get('href'))  # /pin/id/
         ]
+
+        inserted_pins = Storage.json('myjsonfile.json').select().keys()
+
+        return [pin for pin in found_pins
+                if pin not in inserted_pins]
+
 
     def pins(self) -> Dict[str, list]:
         """ Go to each search url, perform login, scroll, and return its pins """
@@ -268,18 +281,16 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                data = PinData(self.site).data
-                print(data)
+                pindata = {pin: PinData(self.site).data}
+                Storage.json('myjsonfile.json').insert(pindata)
 
 
 if __name__ == '__main__':
-    client = None
-
+    client = Client(
+        queries=['Kusanagi Motoko'],
+        scrolls=1
+    )
     try:
-        client = Client(
-            queries=['Kusanagi Motoko'],
-            scrolls=1
-        )
         pins = client.pins()
         pin = client.pin(pins)
 
@@ -287,3 +298,5 @@ if __name__ == '__main__':
         raise e
     except KeyboardInterrupt:
         pass
+    finally:
+        client.driver.quit()
