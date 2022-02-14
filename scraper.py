@@ -187,6 +187,7 @@ class JsonFile(_Storage):
         json_file.close()
         return json_data
 
+
 class Storage:
     @staticmethod
     def json(filename):
@@ -196,9 +197,11 @@ class Storage:
 class Client:
     """ Wrapper to perform actions on the WebSite, using Browser and its driver """
 
-    def __init__(self, queries:List[str], scrolls:int):
+    def __init__(self, queries:List[str], scrolls:int=0):
         self.browser = Browser()
         self.driver = self.browser.driver
+        self.scrolls = scrolls
+
         self.site = WebSite(self.browser.driver)
         self.query_urls = self._query_urls(queries)
 
@@ -238,7 +241,6 @@ class Client:
 
         sleep(timeout)
 
-
     def _pins(self) -> List[str]:
         """ Return pins from the current driver's page """
 
@@ -256,7 +258,6 @@ class Client:
         return [pin for pin in found_pins
                 if pin not in inserted_pins]
 
-
     def pins(self) -> Dict[str, list]:
         """ Go to each search url, perform login, scroll, and return its pins """
 
@@ -268,6 +269,8 @@ class Client:
 
             if url == self.query_urls[0]:  # Login on the first url
                 self.login()
+
+            self.browser.scroll(self.scrolls)
 
             # self.used_pins = ... NOTE: requires db data
             pins[url] = self._pins()
@@ -288,11 +291,11 @@ class Client:
 if __name__ == '__main__':
     client = Client(
         queries=['Kusanagi Motoko'],
-        scrolls=1
     )
     try:
         pins = client.pins()
-        pin = client.pin(pins)
+        if pins:
+            client.pin(pins)
 
     except Exception as e:
         raise e
