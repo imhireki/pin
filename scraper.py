@@ -133,14 +133,14 @@ class PinData:
 
         urls = []  # style with multiples imgs
         for div in img_soup.find_all('div'):
-            # Scan style on the div with an http (the images)
-            style = div.get('style', '')
-            url = re.search("http.*[)]", style)
+            url = re.search(
+                "(http.?://i.pinimg.com/[0-9]{3}x/../../../[a-z0-9]+\.(?:png|jpg|jpeg))",
+                div.get('style', '')
+            )
             if not url:
                 continue
 
-            # get the full url and append to urls
-            urls.append(style[url.start():url.end()-2])
+            urls.append(url.group())
         return urls
 
     def is_valid(self):
@@ -290,7 +290,7 @@ class Client:
 
 if __name__ == '__main__':
     client = Client(
-        queries=['Kusanagi Motoko'],
+        queries=['anime matching icons'],
     )
     try:
         pins = client.pins()
