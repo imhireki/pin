@@ -154,15 +154,7 @@ class PinData:
         pass
 
 
-class _Storage(ABC):
-    @abstractmethod
-    def insert(self): pass
-
-    @abstractmethod
-    def select(self): pass
-
-
-class JsonFile(_Storage):
+class JsonFile:
     """ Deal with the storage using a Json file """
 
     def __init__(self, filename:str):
