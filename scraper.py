@@ -253,11 +253,11 @@ class Client:
         # links(<a>) in ELEMENT_PINS
         links_soup = self.site.html_soup(self.site.ELEMENT_PINS).find_all('a')
 
-        found_pins = [
+        found_pins = list(set([
             '{}{}'.format(self.site.ENDPOINT_HOME, link.get('href'))
             for link in links_soup
             if re.search('^/pin/[0-9]+/$', link.get('href'))  # /pin/id/
-        ]
+        ]))
 
         inserted_pins = Storage.json('myjsonfile.json').select().keys()
 
