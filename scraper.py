@@ -191,12 +191,12 @@ class Storage:
 class Client:
     """ Wrapper to perform actions on the WebSite, using Browser and its driver """
 
-    def __init__(self, queries:List[str], scrolls:int=0):
+    def __init__(self, queries:List[str], storage:Storage, scrolls:int=0):
         self.browser = Browser()
         self.driver = self.browser.driver
         self.scrolls = scrolls
-
         self.site = WebSite(self.browser.driver)
+        self.storage = storage
         self.query_urls = self._query_urls(queries)
 
     def _query_urls(self, queries:List[str]) -> List[str]:
@@ -251,10 +251,8 @@ class Client:
             if re.search('^/pin/[0-9]+/$', link.get('href'))  # /pin/id/
         ]))
 
-        inserted_pins = Storage.json('myjsonfile.json').select().keys()
-
-        return [pin for pin in found_pins
-                if pin not in inserted_pins]
+        inserted_pins = self.storage.select().keys()
+        return [pin for pin in found_pins if pin not in inserted_pins]
 
     def pins(self) -> Dict[str, list]:
         """ Go to each search url, perform login, scroll, and return its pins """
@@ -282,13 +280,16 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                pindata = {pin: PinData(self.site).data}
-                Storage.json('myjsonfile.json').insert(pindata)
+                pin_data = {pin: PinData(self.site).data}
+                self.storage.insert(pin_data)
 
 
 if __name__ == '__main__':
+    json_storage = Storage.json('myjsonfile.json')
+
     client = Client(
         queries=['anime matching icons'],
+        storage=json_storage
     )
     try:
         pins = client.pins()
