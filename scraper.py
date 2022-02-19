@@ -261,7 +261,17 @@ class SQL(ABC):
         return [col[0] for col in rows]
 
 
+class Postgres(SQL):
+    def __init__(self, connection:Dict[str, str]):
+        self.connection = psycopg.connect(**connection)
+        self.cursor = self.connection.cursor()
+
+
 class Storage:
+    @staticmethod
+    def postgres(connection):
+        return Postgres(connection)
+
     @staticmethod
     def json(filename):
         return JsonFile(filename)
