@@ -237,6 +237,29 @@ class SQL(ABC):
             )
             self.connection.commit()  # maybe just one commit
 
+    def select(self, urls:List[str]):
+        """Select urls matching `urls` sent in the list.
+
+        Args:
+            urls: list of urls used for check the url field in the db.
+        Returns:
+            list: List[str] if any matches, List[] otherwise.
+        """
+        self.cursor.execute(
+            """
+            SELECT
+                pin.url
+            FROM
+                pins as pin
+            WHERE
+                pin.url in ({})
+            ;
+            """.format(('%s, ' * len(urls))[:-2]),  # %s for each url
+            urls
+        )
+        rows = self.cursor.fetchall()
+        return [col[0] for col in rows]
+
 
 class Storage:
     @staticmethod
