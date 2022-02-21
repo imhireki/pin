@@ -267,10 +267,20 @@ class Postgres(SQL):
         self.cursor = self.connection.cursor()
 
 
+class MySQL(SQL):
+    def __init__(self, connection:Dict[str, str]):
+        self.connection = mysql.connector.connect(**connection)
+        self.cursor = self.connection.cursor()
+
+
 class Storage:
     @staticmethod
     def postgres(connection):
         return Postgres(connection)
+
+    @staticmethod
+    def postgres(connection):
+        return MySQL(connection)
 
     @staticmethod
     def json(filename):
