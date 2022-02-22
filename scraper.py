@@ -21,11 +21,15 @@ class Client:
         self.scrolls = scrolls
         self.site = WebSite(self.browser.driver)
         self.storage = storage
-        self.query_urls = self._query_urls(queries)
+        self.query_urls = queries
 
-    def _query_urls(self, queries:List[str]) -> List[str]:
-        """ Return a list of urls using the content inside `queries` """
-        query_urls = []
+    @property
+    def query_urls(self):
+        return self._query_urls
+
+    @query_urls.setter
+    def query_urls(self, queries:List[str]):
+        urls = []
         for query in queries:
             words = query.split(' ')  # type: List[str]
             url = self.site.ENDPOINT_SEARCH
@@ -36,9 +40,8 @@ class Client:
                     url += f'+{word}'  # ?q=word+word...
                 else:
                     url += word  # ?q=word
-            query_urls.append(url)
-
-        return query_urls
+            urls.append(url)
+        self._query_urls = urls
 
     def login(self, timeout:float=10.0):
         """ Perform login using enviroment keys """
