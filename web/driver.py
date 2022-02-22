@@ -1,20 +1,24 @@
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium import webdriver
 
+from typing import List, Dict, Union
 
 class Browser:
     """ Setup driver and perform actions on it """
-    def __init__(self):
-        self.driver = self._driver()
+    def __init__(self, headless=False, user_data='.selenium'):
+        self.driver = {'headless': headless,
+                       'user_data': user_data}
 
-    @staticmethod
-    def _driver() -> ChromiumDriver:
-        """ Return a configured ChromiumDriver """
+    @property
+    def driver(self):
+        return self._driver
+
+    @driver.setter
+    def driver(self, options:Dict[str, Union[str, bool]]):
         driver_options = webdriver.ChromeOptions()
-        driver_options.add_argument('user-data-dir=.selenium')
-        driver_options.headless = False
-        return webdriver.Chrome(options=driver_options)
-
+        driver_options.add_argument(f'user-data-dir={options["user_data"]}')
+        driver_options.headless = options['headless']
+        self._driver = webdriver.Chrome(options=driver_options)
 
     def scroll(self, times:int=1, timeout:float=10.0):
         """ Scroll to the bottom of the site iterating over `times`
