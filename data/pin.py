@@ -6,9 +6,9 @@ class PinData:
 
     def __init__(self, site):
         self.site = site
-        self.data = self._data()
 
-    def _data(self) -> Dict[str, Union[str, list]]:
+    @property
+    def data(self) -> Dict[str, Union[str, list]]:
         return {'title': self.title(),
                 'subtitle': self.subtitle(),
                 'images': self.images()}
