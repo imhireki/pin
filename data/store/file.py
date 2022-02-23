@@ -1,6 +1,6 @@
 from typing import List, Dict, Union
-import json
 import os.path
+import json
 
 
 class JsonFile:

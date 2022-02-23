@@ -8,7 +8,7 @@ class Storage:
         return Postgres(connection)
 
     @staticmethod
-    def postgres(connection):
+    def mysql(connection):
         return MySQL(connection)
 
     @staticmethod

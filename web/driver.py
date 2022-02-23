@@ -2,6 +2,8 @@ from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium import webdriver
 
 from typing import List, Dict, Union
+from time import sleep
+
 
 class Browser:
     """ Setup driver and perform actions on it """
