@@ -1,4 +1,5 @@
 from typing import List, Dict, Union
+import re
 
 
 class PinData:
@@ -39,20 +40,20 @@ class PinData:
         """ Return pin's images """
         img_soup = self.site.html_soup(self.site.ELEMENT_IMAGES)
 
+        # Single SRC image
         if img_soup.find('img'):
-            return [img_soup.find('img').get('src')]  # src img
+            return [img_soup.find('img').get('src')]
 
-        urls = []  # style with multiples imgs
-        for div in img_soup.find_all('div'):
-            url = re.search(
-                "(http.?://i.pinimg.com/[0-9]{3}x/../../../[a-z0-9]+\.(?:png|jpg|jpeg))",
-                div.get('style', '')
-            )
-            if not url:
-                continue
-
-            urls.append(url.group())
-        return urls
+        # Multiple STYLE images
+        return list(set([
+            url[0]
+            for div in img_soup.find_all('div')
+            for url in [re.search(
+                '(http.?://i.pinimg.com/[0-9]{3}x/../../../[a-z0-9]+\.(?:png|jpg|jpeg))',
+                str(div)
+                )]
+            if url
+        ]))
 
     def is_valid(self):
         """ Return whether the data is valid """
