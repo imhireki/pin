@@ -4,58 +4,59 @@ import mysql.connector
 
 
 class SQL:
-    def insert(self, data:Dict[str, list]):
+    def insert_into(self, table:str, column:Union[str, list], value:str):
+        statement = 'INSERT INTO {} ({}) VALUES ({})'.format(
+                        table,
+                        (('{}, ' * len(column))[:-2]).format(*column),
+                        ('%s, ' * len(value))[:-2]
+                    )
+        self.execute(statement, value)
+        self.commit()
+
+    def select_from(self, table, column, query:Dict[str, str]):
+        """ Perform a SQL select statement
+
+        SELECT `column` FROM `table`
+        WHERE `query['column']` IN `query['value']`
+        """
+        if type(query['value']) is str:
+            query['value'] = [query['value']]
+
+        statement = 'SELECT {} FROM {} WHERE {} IN ({})'.format(
+            f'{table}.{column}', table, query['column'],
+            ('%s, ' * len(query['value']))[:-2]
+        )
+
+        self.execute(statement, query['value'])
+        return self.fetchall()
+
+    def insert_pin(self, data:Dict[str, list]):
         """Insert the data inside db's tables
 
         Args:
             data: dictionary with url:str, title:str, subtitle:str, images:list
         """
-        # inserting url title e subtitle
-        self.execute(
-            """
-            INSERT INTO
-                pins (url, title, subtitle)
-            VALUES
-                (%s, %s, %s)
-            ;
-            """,
-            (data['url'], data['title'], data['subtitle'])
+        self.insert_into(
+            table='pins',
+            column=['url', 'title', 'subtitle'],
+            value=(data['url'], data['title'], data['subtitle'])
         )
 
-        self.commit()
-
-        # query the id from the last insertion
-        self.execute(
-            """
-            SELECT
-                pin.id
-            FROM
-                pins as pin
-            WHERE
-                pin.url = %s
-            ;
-            """,
-            [data['url']]
+        rows = self.select_from(
+            column='id', table='pins',
+            query={'column': 'url', 'value': data['url']}
         )
-        rows = self.fetchall()
         pin_id = [col[0] for col in rows][0]
 
+        # insert the image  FIXME: pins_id to pin_id or pin
         for image in data['images']:
-            # insert the image  FIXME: pins_id to pin_id or pin
-            self.execute(
-                """
-                INSERT INTO
-                    images (pins_id, url)
-                VALUES
-                    (%s, %s)
-                ;
-                """,
-                (pin_id, image)
+            self.insert_into(
+                table='images',
+                column=['pins_id', 'url'],
+                value=(pin_id, image)
             )
 
-            self.commit()
-
-    def select(self, urls:List[str]):
+    def query_urls(self, urls:List[str]):
         """Select urls matching `urls` sent in the list.
 
         Args:
@@ -63,19 +64,10 @@ class SQL:
         Returns:
             list: List[str] if any matches, List[] otherwise.
         """
-        self.execute(
-            """
-            SELECT
-                pin.url
-            FROM
-                pins as pin
-            WHERE
-                pin.url in ({})
-            ;
-            """.format(('%s, ' * len(urls))[:-2]),  # %s for each url
-            urls
+        rows = self.select_from(
+            column='url', table='pins',
+            query={'column': 'url', 'value': urls}
         )
-        rows = self.fetchall()
         return [col[0] for col in rows]
 
 
@@ -91,7 +83,6 @@ class DBConnection:
     @connection.setter
     def connection(self, conn):
         try:
-            # Connection
             if conn[0] == 'Postgres':
                 self._connection = psycopg.connect(**conn[1])
             elif conn[0] == 'MySQL':

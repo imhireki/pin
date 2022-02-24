@@ -10,6 +10,7 @@ from web.html import WebSite
 
 import re
 import os
+from time import sleep
 
 
 class Client:
@@ -78,7 +79,9 @@ class Client:
             if re.search('^/pin/[0-9]+/$', link.get('href'))  # /pin/id/
         ]))
 
-        inserted_pins = self.storage.select().keys()
+        # inserted_pins = self.storage.select().keys()
+        inserted_pins = self.storage.query_urls(found_pins)
+
         return [pin for pin in found_pins if pin not in inserted_pins]
 
     def pins(self) -> Dict[str, list]:
@@ -107,23 +110,15 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                pin_data = {pin: PinData(self.site).data}
-                self.storage.insert(pin_data)
+                pin_data = PinData(self.site).data
 
+                # pin_data = {pin: pin_data}
+                # self.storage.insert(pin_data)
 
-if __name__ == '__main__':
-    json_storage = Storage.json('mydata.json')
+                self.storage.insert_pin({
+                    'url': pin,
+                    'title': pin_data['title'],
+                    'subtitle': pin_data['subtitle'],
+                    'images': pin_data['images']
+                })
 
-    client = Client(
-        queries=['roronoa zoro icon'],
-        storage=json_storage
-    )
-    try:
-        pins = client.pins()
-        if pins: client.pin(pins)
-    except Exception as e:
-        raise e
-    except KeyboardInterrupt:
-        pass
-    finally:
-        client.driver.quit()
