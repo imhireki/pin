@@ -3,8 +3,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from typing import List, Dict, Union
 
-from data.store.storage import Storage
-from data.pin import PinData
+from data.pin import Pin
+from data.store import storage
 from web.driver import Browser
 from web.html import WebSite
 
@@ -18,11 +18,14 @@ class Client:
 
     def __init__(self, queries:List[str], storage:Storage, scrolls:int=0):
         self.browser = Browser()
-        self.driver = self.browser.driver
-        self.scrolls = scrolls
         self.site = WebSite(self.browser.driver)
+        self.driver = self.browser.driver
+        self.pin_data = Pin(self.site)
+
+        self.scrolls = scrolls
         self.storage = storage
         self.query_urls = queries
+
 
     @property
     def query_urls(self):
@@ -79,7 +82,6 @@ class Client:
             if re.search('^/pin/[0-9]+/$', link.get('href'))  # /pin/id/
         ]))
 
-        # inserted_pins = self.storage.select().keys()
         inserted_pins = self.storage.query_urls(found_pins)
 
         return [pin for pin in found_pins if pin not in inserted_pins]
@@ -110,15 +112,8 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                pin_data = PinData(self.site).data
-
-                # pin_data = {pin: pin_data}
-                # self.storage.insert(pin_data)
-
-                self.storage.insert_pin({
-                    'url': pin,
-                    'title': pin_data['title'],
-                    'subtitle': pin_data['subtitle'],
-                    'images': pin_data['images']
-                })
+                self.storage.insert_pin(dict(
+                    url=pin,
+                    **self.pin_data.data
+                ))
 

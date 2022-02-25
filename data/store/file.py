@@ -9,11 +9,14 @@ class JsonFile:
     def __init__(self, filename:str):
         self.filename = filename
 
+    @staticmethod
+    def url_as_key(data):
+        return {data.pop('url'): dict(**data)}
+
     def insert_pin(self, data:Dict[str, Union[str, list]]):
         """ Append the data to `self.filename` """
-
         json_data = self.select()
-        json_data.update(data)
+        json_data.update(self.url_as_key(data))
 
         json_file = open(self.filename, 'w')
         json.dump(obj=json_data, fp=json_file, indent=4)
