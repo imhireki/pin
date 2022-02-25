@@ -9,7 +9,7 @@ class JsonFile:
     def __init__(self, filename:str):
         self.filename = filename
 
-    def insert(self, data:Dict[str, Union[str, list]]):
+    def insert_pin(self, data:Dict[str, Union[str, list]]):
         """ Append the data to `self.filename` """
 
         json_data = self.select()
@@ -18,6 +18,10 @@ class JsonFile:
         json_file = open(self.filename, 'w')
         json.dump(obj=json_data, fp=json_file, indent=4)
         json_file.close()
+
+    def query_urls(self, urls:List[str]):
+        json_urls = self.select().keys()
+        return [url for url in urls if url in json_urls]
 
     def select(self) -> Dict[str, Union[str, list]]:
         """ Return all the data from the `self.filename` file """
@@ -29,3 +33,4 @@ class JsonFile:
         json_data = json.load(json_file)
         json_file.close()
         return json_data
+
