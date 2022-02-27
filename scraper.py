@@ -3,7 +3,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from typing import List, Dict, Union
 
-from data.pin import Pin
+from data.pin import PinData
 from data.store import storage
 from web.driver import Browser
 from web.html import WebSite
@@ -16,16 +16,18 @@ from time import sleep
 class Client:
     """ Wrapper to perform actions on the WebSite, using Browser and its driver """
 
-    def __init__(self, queries:List[str], storage:Storage, scrolls:int=0):
+    def __init__(self, queries:List[str], storage, scrolls:int=0):
         self.browser = Browser()
         self.site = WebSite(self.browser.driver)
         self.driver = self.browser.driver
-        self.pin_data = Pin(self.site)
 
         self.scrolls = scrolls
         self.storage = storage
         self.query_urls = queries
 
+    @property
+    def pin_data(self):
+        return PinData(self.site)
 
     @property
     def query_urls(self):
@@ -100,7 +102,6 @@ class Client:
 
             self.browser.scroll(self.scrolls)
 
-            # self.used_pins = ... NOTE: requires db data
             pins[url] = self._pins()
 
         return pins
@@ -112,8 +113,4 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                self.storage.insert_pin(dict(
-                    url=pin,
-                    **self.pin_data.data
-                ))
-
+                self.storage.insert_pin(dict(url=pin, **self.pin_data.data))
