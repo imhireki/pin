@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.keys import Keys
 from typing import List, Dict, Union
 
 from data.pin import PinData
@@ -16,8 +17,8 @@ from time import sleep
 class Client:
     """ Wrapper to perform actions on the WebSite, using Browser and its driver """
 
-    def __init__(self, queries:List[str], storage, scrolls:int=0):
-        self.browser = Browser()
+    def __init__(self, queries:List[str], storage, browser={}, scrolls:int=0):
+        self.browser = Browser(**browser)
         self.site = WebSite(self.browser.driver)
         self.driver = self.browser.driver
 
@@ -113,4 +114,7 @@ class Client:
             for pin in pins.get(query_url):
                 self.driver.get(pin)
 
-                self.storage.insert_pin(dict(url=pin, **self.pin_data.data))
+                pin_data = self.pin_data.data
+                if pin_data:
+                    self.storage.insert_pin(dict(url=pin, **pin_data))
+

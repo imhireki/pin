@@ -7,9 +7,12 @@ from time import sleep
 
 class Browser:
     """ Setup driver and perform actions on it """
-    def __init__(self, headless=False, user_data='.selenium'):
-        self.driver = {'headless': headless,
-                       'user_data': user_data}
+    def __init__(self, browser='firefox', headless=False, user_data='.selenium'):
+        self.driver = {
+            'browser': browser,
+            'headless': headless,
+            'user_data': user_data
+        }
 
     @property
     def driver(self):
@@ -17,10 +20,23 @@ class Browser:
 
     @driver.setter
     def driver(self, options:Dict[str, Union[str, bool]]):
+        if options['browser'] == 'firefox':
+            self._driver = self.firefox(options)
+        elif options['browser'] == 'chrome':
+            self._driver = self.chrome(options)
+
+    def firefox(self, options):
+        driver_options = webdriver.FirefoxOptions()
+        driver_options.add_argument('-profile')
+        driver_options.add_argument(options['user_data'])
+        driver_options.headless = options['headless']
+        return webdriver.Firefox(options=driver_options)
+
+    def chrome(self, options):
         driver_options = webdriver.ChromeOptions()
         driver_options.add_argument(f'user-data-dir={options["user_data"]}')
         driver_options.headless = options['headless']
-        self._driver = webdriver.Chrome(options=driver_options)
+        return webdriver.Chrome(options=driver_options)
 
     def scroll(self, times:int=1, timeout:float=10.0):
         """ Scroll to the bottom of the site iterating over `times`
