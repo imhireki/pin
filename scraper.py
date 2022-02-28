@@ -17,8 +17,8 @@ from time import sleep
 class Client:
     """ Wrapper to perform actions on the WebSite, using Browser and its driver """
 
-    def __init__(self, queries:List[str], storage, browser={}, scrolls:int=0):
-        self.browser = Browser(**browser)
+    def __init__(self, queries:List[str], storage, scrolls:int=0, **kwargs):
+        self.browser = Browser(**kwargs.get('browser') or {})
         self.site = WebSite(self.browser.driver)
         self.driver = self.browser.driver
 
@@ -117,4 +117,3 @@ class Client:
                 pin_data = self.pin_data.data
                 if pin_data:
                     self.storage.insert_pin(dict(url=pin, **pin_data))
-

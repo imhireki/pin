@@ -7,36 +7,44 @@ from time import sleep
 
 class Browser:
     """ Setup driver and perform actions on it """
-    def __init__(self, browser='firefox', headless=False, user_data='.selenium'):
-        self.driver = {
-            'browser': browser,
-            'headless': headless,
-            'user_data': user_data
-        }
+
+    defaults = {
+        'browser': 'Firefox',
+        'headless': False,
+        'data': '.data',
+        'binary': None
+    }
+
+    def __init__(self, **kwargs):
+        self.defaults.update(kwargs) if kwargs else self.defaults
+        self.driver = self.defaults
 
     @property
     def driver(self):
         return self._driver
 
     @driver.setter
-    def driver(self, options:Dict[str, Union[str, bool]]):
-        if options['browser'] == 'firefox':
-            self._driver = self.firefox(options)
-        elif options['browser'] == 'chrome':
-            self._driver = self.chrome(options)
+    def driver(self, opt:Dict[str, Union[str, bool]]):
+        if opt['browser'] == 'Firefox':
+            self._driver = self.firefox(opt)
+        elif opt['browser'] == 'Chrome':
+            self._driver = self.chrome(opt)
 
-    def firefox(self, options):
-        driver_options = webdriver.FirefoxOptions()
-        driver_options.add_argument('-profile')
-        driver_options.add_argument(options['user_data'])
-        driver_options.headless = options['headless']
-        return webdriver.Firefox(options=driver_options)
+    def _options(self, options, opt):
+        if opt['binary']:
+            options.binary_location = opt['binary']
+        options.headless = opt['headless']
+        return options
 
-    def chrome(self, options):
-        driver_options = webdriver.ChromeOptions()
-        driver_options.add_argument(f'user-data-dir={options["user_data"]}')
-        driver_options.headless = options['headless']
-        return webdriver.Chrome(options=driver_options)
+    def firefox(self, opt):
+        return webdriver.Firefox(
+            webdriver.FirefoxProfile(opt['data']),
+            options=self._options(webdriver.FirefoxOptions(), opt))
+
+    def chrome(self, opt):
+        options = self._options(webdriver.ChromeOptions(), opt)
+        options.add_argument('user-data-dir={}'.format(opt['data']))
+        return webdriver.Chrome(options=options)
 
     def scroll(self, times:int=1, timeout:float=10.0):
         """ Scroll to the bottom of the site iterating over `times`
