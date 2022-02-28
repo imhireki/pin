@@ -3,6 +3,7 @@ from selenium import webdriver
 
 from typing import List, Dict, Union
 from time import sleep
+import os
 
 
 class Browser:
@@ -37,9 +38,12 @@ class Browser:
         return options
 
     def firefox(self, opt):
-        return webdriver.Firefox(
-            webdriver.FirefoxProfile(opt['data']),
-            options=self._options(webdriver.FirefoxOptions(), opt))
+        if not os.path.exists(opt['data']):
+            os.mkdir(opt['data'])
+
+        profile = webdriver.FirefoxProfile(opt['data'])
+        return webdriver.Firefox(profile, options=self._options(
+            webdriver.FirefoxOptions(), opt))
 
     def chrome(self, opt):
         options = self._options(webdriver.ChromeOptions(), opt)
