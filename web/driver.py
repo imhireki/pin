@@ -12,7 +12,6 @@ class Browser:
     defaults = {
         'browser': 'Firefox',
         'headless': False,
-        'data': '.data',
         'binary': None
     }
 
@@ -38,6 +37,7 @@ class Browser:
         return options
 
     def firefox(self, opt):
+        opt['data'] = '.firefox'
         if not os.path.exists(opt['data']):
             os.mkdir(opt['data'])
 
@@ -46,11 +46,12 @@ class Browser:
             webdriver.FirefoxOptions(), opt))
 
     def chrome(self, opt):
+        opt['data'] = '.chrome'
         options = self._options(webdriver.ChromeOptions(), opt)
         options.add_argument('user-data-dir={}'.format(opt['data']))
         return webdriver.Chrome(options=options)
 
-    def scroll(self, times:int=1, timeout:float=10.0):
+    def scroll(self, times:int=1):
         """ Scroll to the bottom of the site iterating over `times`
 
         Args:
@@ -62,4 +63,4 @@ class Browser:
             self.driver.execute_script(
                 'window.scrollTo(0, document.body.scrollHeight);'
             )
-            sleep(timeout)
+            sleep(3)

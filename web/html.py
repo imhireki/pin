@@ -34,7 +34,7 @@ class WebSite:
 
     def web_element(self,
              element:str,
-             timeout:float=10.0,
+             timeout:float=3.0,
              condition:EC=EC.presence_of_element_located,
              locator:By=By.CSS_SELECTOR) -> WebElement:
         """ Return a WebElement (wrapper of WebDriverWait)

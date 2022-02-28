@@ -3,6 +3,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 from typing import List, Dict, Union
+from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxDriver
 
 from data.pin import PinData
 from data.store import storage
@@ -41,7 +42,6 @@ class Client:
             words = query.split(' ')  # type: List[str]
             url = self.site.ENDPOINT_SEARCH
 
-            # ?q=word+word...
             for c, word in enumerate(words):
                 if c != 0:
                     url += f'+{word}'  # ?q=word+word...
@@ -50,7 +50,7 @@ class Client:
             urls.append(url)
         self._query_urls = urls
 
-    def login(self, timeout:float=10.0):
+    def login(self):
         """ Perform login using enviroment keys """
 
         # Go to the login form
@@ -58,7 +58,7 @@ class Client:
             login_button = self.site.web_element(
                 element=self.site.ELEMENT_LOGIN_BUTTON,
                 condition=EC.element_to_be_clickable,
-                timeout=5.0,
+                timeout=7.0,
             ).click()
         except TimeoutException:  # User already logged in
             return
@@ -71,7 +71,12 @@ class Client:
         email_input.send_keys(os.getenv('PINTEREST_EMAIL'))
         password_input.send_keys(os.getenv('PINTEREST_PASSWORD'), Keys.ENTER)
 
-        sleep(timeout)
+        if isinstance(self.driver, FirefoxDriver):
+            sleep(2)
+            self.driver.refresh()  # frees it from the login form
+
+        sleep(3)
+
 
     def _pins(self) -> List[str]:
         """ Return pins from the current driver's page """
@@ -117,3 +122,4 @@ class Client:
                 pin_data = self.pin_data.data
                 if pin_data:
                     self.storage.insert_pin(dict(url=pin, **pin_data))
+
