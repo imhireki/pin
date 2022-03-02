@@ -70,7 +70,7 @@ class Client:
     def query_urls(self, query:List[str]):
         urls = []
         for q in query:
-            url = self.site.ENDPOINT_SEARCH
+            url = self.site.URL_SEARCH
 
             for c, word in enumerate(q.split(' ')):
                 if c != 0:
@@ -93,7 +93,6 @@ class Client:
             login_button = self.site.web_element(
                 element=self.site.ELEMENT_LOGIN_BUTTON,
                 condition=EC.element_to_be_clickable,
-                timeout=7.0,
             ).click()
         except TimeoutException:  # Return when the user is already logged in.
             return
@@ -125,7 +124,7 @@ class Client:
 
         # Search <a> tags's href for regex matches.
         found_pins = list(set([
-            '{}{}'.format(self.site.ENDPOINT_HOME, link.get('href'))
+            '{}{}'.format(self.site.URL_HOME, link.get('href'))
             for link in links_soup
             if re.search('^/pin/[0-9]+/$', link.get('href'))
         ]))
@@ -170,3 +169,4 @@ class Client:
 
                 if pin_data:
                     self.storage.insert_pin(dict(url=pin, **pin_data))
+

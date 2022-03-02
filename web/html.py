@@ -6,10 +6,11 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
 
-class WebSite:
-    """ Deal with elements on the HTML of the website """
-    ENDPOINT_SEARCH = 'https://www.pinterest.com/search/pins/?q='
-    ENDPOINT_HOME = 'https://br.pinterest.com'
+class ElementURL:
+    """The elements to locate and URLs in the Pinterest."""
+
+    URL_SEARCH = 'https://www.pinterest.com/search/pins/?q='
+    URL_HOME = 'https://br.pinterest.com'
 
     ELEMENT_LOGIN_BUTTON = 'div.Eqh:nth-child(3) > div:nth-child(1) > button:nth-child(1)'
     ELEMENT_EMAIL_INPUT = '#email'
@@ -21,30 +22,44 @@ class WebSite:
     ELEMENT_SUBTITLE = 'div.FNs:nth-child(2) > span:nth-child(1)'
     ELEMENT_IMAGES = '.OVX > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)'
 
+
+class WebSite(ElementURL):
+    """Provide ways to get elements using WebDriverWait."""
+
     def __init__(self, driver):
-        self.driver = driver
+        self.web_driver_wait = driver
 
-    def html_soup(self, element:str, **kwargs):
-        """ Return an object of BeautifulSoup parsed as HTML """
-        return BeautifulSoup(self.html(element, **kwargs), 'html.parser')
+    @property
+    def web_driver_wait(self) -> WebDriverWait:
+        """An instance of WebDriverWait."""
+        return self._web_driver_wait
 
-    def html(self, element:str, **kwargs):
-        """ Return the HTML of the an `element` """
-        return self.web_element(element, **kwargs).get_attribute('outerHTML')
+    @web_driver_wait.setter
+    def web_driver_wait(self, driver):
+        self._web_driver_wait = WebDriverWait(driver, 10)
 
-    def web_element(self,
-             element:str,
-             timeout:float=3.0,
-             condition:EC=EC.presence_of_element_located,
-             locator:By=By.CSS_SELECTOR) -> WebElement:
-        """ Return a WebElement (wrapper of WebDriverWait)
-        args
-        ----
-        element -- element to search for
-        timeout -- timeout to search for the element (default 10.0)
-        condition -- expected condition (default: EC.presence_of_element_located)
-        locator -- locator to search the element (deffault: By.CSS_SELECTOR)
+    def web_element(self, element:str, locator: By = By.CSS_SELECTOR,
+                    condition: EC = EC.presence_of_element_located):
+        """Wrap a WebDriverWait's until method.
+
+        Args:
+            element: The element to search for.
+            locator: The locator to search for the element.
+            condition: The condition to track the element.
+
+        Returns:
+            WebElement: return a WebElement instance matching the args.
         """
-        return WebDriverWait(self.driver, timeout).until(
-            condition((locator, element))
-            )
+
+        return self.web_driver_wait.until(condition((locator, element)))
+
+    def html(self, element:str, *args, **kwargs) -> str:
+        """Get the HTML of the `element`."""
+
+        return self.web_element(element, *args, **kwargs
+                                ).get_attribute('outerHTML')
+
+    def html_soup(self, element:str, *args, **kwargs) -> BeautifulSoup:
+        """Get an BeautifulSoup's object from the `element`, parsed as HTML."""
+
+        return BeautifulSoup(self.html(element, *args, **kwargs), 'html.parser')
