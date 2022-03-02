@@ -7,7 +7,12 @@ import os
 
 
 class Browser:
-    """ Setup driver and perform actions on it """
+    """Setup the driver and perform actions on it.
+
+    Attributes:
+        defaults Dict[str, Union[str, bool]]: The default options to configure
+            the webdriver.
+    """
 
     defaults = {
         'browser': 'Firefox',
@@ -16,11 +21,19 @@ class Browser:
     }
 
     def __init__(self, **kwargs):
+        """Update the driver's default options with the kwargs."""
+
         self.defaults.update(kwargs) if kwargs else self.defaults
         self.driver = self.defaults
 
     @property
     def driver(self):
+        """The browser's driver.
+
+        Args:
+            opt: The Options to configure the browser and the driver.
+        """
+
         return self._driver
 
     @driver.setter
@@ -31,12 +44,16 @@ class Browser:
             self._driver = self.chrome(opt)
 
     def _options(self, options, opt):
+        """Add the base options: binary and headless."""
+
         if opt['binary']:
             options.binary_location = opt['binary']
         options.headless = opt['headless']
         return options
 
     def firefox(self, opt):
+        """Setup the Firefox webdriver."""
+
         opt['data'] = '.firefox'
         if not os.path.exists(opt['data']):
             os.mkdir(opt['data'])
@@ -46,19 +63,21 @@ class Browser:
             webdriver.FirefoxOptions(), opt))
 
     def chrome(self, opt):
+        """Setup the Chrome webdriver."""
+
         opt['data'] = '.chrome'
         options = self._options(webdriver.ChromeOptions(), opt)
         options.add_argument('user-data-dir={}'.format(opt['data']))
         return webdriver.Chrome(options=options)
 
     def scroll(self, times:int=1):
-        """ Scroll to the bottom of the site iterating over `times`
+        """Scroll to the bottom of the page, iterating over the amount of times.
 
         Args:
-            times: how much the driver is gonna scroll to the bottom
+            times: The amount of times the driver is gonna scroll to the bottom
                 of the page.
-            timeout: time between the each scroll
         """
+
         for time in range(times):
             self.driver.execute_script(
                 'window.scrollTo(0, document.body.scrollHeight);'
