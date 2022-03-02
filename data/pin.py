@@ -3,11 +3,24 @@ import re
 
 
 class Pin:
+    """Get the pin's data.
+
+    Get the title, subtitle and images, using a WebSite object
+    with the browser inside some pin's URL.
+
+    Args:
+        site (WebSite): The link to elements related to the pinterest.
+
+    Attributes:
+        site (WebSite): The link to elements related to the pinterest.
+    """
+
     def __init__(self, site):
         self.site = site
 
     def ignore_error(default=''):
-        """ It avoids any exception, setting a default value if it happens """
+        """Avoid any exception, setting a default value if it happens."""
+
         def _decorator(func):
             def wrapper_data(self):
                 try:
@@ -17,26 +30,29 @@ class Pin:
             return wrapper_data
         return _decorator
 
-    @ignore_error()
+    @ignore_error('')
     def title(self) -> str:
-        """ Return pin's title """
+        """Return the pin's title."""
+
         return self.site.html_soup(self.site.ELEMENT_TITLE).h1.string
 
-    @ignore_error()
+    @ignore_error('')
     def subtitle(self) -> str:
-        """ Return pin's subtitle"""
+        """Return the pin's subtitle."""
+
         return self.site.html_soup(self.site.ELEMENT_SUBTITLE).span.string
 
     @ignore_error([])
     def images(self) -> Union[List[str], list]:
-        """ Return pin's images """
+        """Return the pin's images."""
+
         img_soup = self.site.html_soup(self.site.ELEMENT_IMAGES)
 
-        # Single SRC image
+        # Single SRC image.
         if img_soup.find('img'):
             return [img_soup.find('img').get('src')]
 
-        # Multiple STYLE images
+        # Multiple STYLE images.
         return list(set([
             url[0]
             for div in img_soup.find_all('div')
@@ -49,6 +65,8 @@ class Pin:
 
 
 class PinData(Pin):
+    """Manage the data of the Pin."""
+
     def __init__(self, site):
         super().__init__(site)
         self._data = {
@@ -59,12 +77,26 @@ class PinData(Pin):
 
     @property
     def data(self) -> Dict[str, Union[str, list]]:
+        """The valid data of the pin."""
+
         if not self.is_valid():
             return {}
         return self._data
 
     def is_valid(self, patch=True):
-        """ Return whether the data is valid """
+        """Return wether the data is valid.
+
+        Check the data, valid if it has at least one image and or a title or
+        a subtitle.
+
+        Args:
+            patch (bool): The option to patch the data if it is possible.
+                Defaults to True.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+
         if not self._data['images']:
             return False
 
@@ -75,7 +107,8 @@ class PinData(Pin):
         return True
 
     def patch_data(self):
-        """ Perform the patching on the data """
+        """Perform the patching of the data."""
+
         if not self._data['title']:
             self._data['title'] = self._data['subtitle']
 
