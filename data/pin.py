@@ -5,14 +5,14 @@ import re
 class Pin:
     """Get the pin's data.
 
-    Get the title, subtitle and images, using a WebSite object
+    Get the title, subtitle and images, using a Site object
     with the browser inside some pin's URL.
 
     Args:
-        site (WebSite): The link to elements related to the pinterest.
+        site (Site): The link to elements related to the pinterest.
 
     Attributes:
-        site (WebSite): The link to elements related to the pinterest.
+        site (Site): The link to elements related to the pinterest.
     """
 
     def __init__(self, site):

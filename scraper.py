@@ -5,9 +5,9 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 
 from data.store import storage
-from web.driver import Browser
 from data.pin import PinData
-from web.html import WebSite
+from web.driver import Browser
+from web.site import Site
 
 from typing import List, Dict, Union
 from time import sleep
@@ -32,7 +32,7 @@ class Client:
 
     Attributes:
         browser (Browser): A browser to be controlled by the driver.
-        site (WebSite): The link to elements related to the pinterest.
+        site (Site): The link to elements related to the pinterest.
         driver (WebDriver): The driver of the browser.
         scrolls (int): The amount of times the driver will perform a scroll on
             each query URL.
@@ -42,7 +42,7 @@ class Client:
 
     def __init__(self, query, storage, scrolls=0, browser={}):
         self.browser = Browser(**browser)
-        self.site = WebSite(self.browser.driver)
+        self.site = Site(self.browser.driver)
         self.driver = self.browser.driver
         self.scrolls = scrolls
         self.storage = storage
