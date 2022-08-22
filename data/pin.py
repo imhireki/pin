@@ -55,3 +55,29 @@ class PinData(IPin):
         images_carousel = self._raw_pin_data['carousel_data']['carousel_slots']
         return [carousel_data['images']['736x']['url'] for carousel_data in images_carousel]
 
+
+class Pin(IPin):
+    _fetched_data: str
+    _pin_data: PinData
+
+    def __init__(self, pin_url: str) -> None:
+        self._pin_url: str = pin_url
+
+    def get_pin_data(self) -> PinData:
+        if not hasattr(self, '_pin_data'):
+            self._pin_data = PinData(self._pin_url)
+        return self._pin_data
+
+    def fetch_data(self) -> dict[str, Union[str, list]]:
+        self.get_pin_data()
+
+        if not hasattr(self, '_fetched_data'):
+            self._fetched_data = self._pin_data.fetch_data()
+        return self._fetched_data
+
+    def is_valid(self) -> bool:
+        self.fetch_data()
+
+        if not self._fetched_data['images']:
+            return False
+        return True
