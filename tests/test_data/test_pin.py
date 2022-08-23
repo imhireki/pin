@@ -98,3 +98,30 @@ class TestPin:
         assert pin_object.is_valid() is validity
         assert pin_object.fetch_data.called
 
+@pytest.mark.e2e
+def test_pin_single_image_source():
+    pin_single_image_data = {
+        'url': 'https://www.pinterest.com/pin/581105158183245043/',
+        'title': 'Shanks', 'description': ' ', 'hashtags': [], 'dominant_color': '#fdfdfd',
+        'images': ['https://i.pinimg.com/736x/68/92/17/689217658bbff324dfba0621ce9449fa.jpg']
+    }
+    pin_single_image_url = 'https://www.pinterest.com/pin/581105158183245043/'
+
+    pin_data = pin.PinData(pin_single_image_url)
+
+    assert pin_data.fetch_data() == pin_single_image_data
+
+@pytest.mark.e2e
+def test_pin_multiple_images_source():
+    pin_multiple_images_data = {
+        'url': 'https://www.pinterest.com/pin/10485011624488809/',
+        'title': 'Luffy & Zoro Matching Icon', 'description': 'One Piece', 'hashtags': [],
+        'dominant_color': '#6e6e90',
+        'images': ['https://i.pinimg.com/736x/ed/02/90/ed029092be09633a085854675461cbd1.jpg',
+                   'https://i.pinimg.com/736x/e3/0f/4b/e30f4b0e9cf0d1d84bdd0fb382238cb9.jpg']
+    }
+    pin_multiple_images_url = 'https://www.pinterest.com/pin/10485011624488809/'
+
+    pin_data = pin.PinData(pin_multiple_images_url)
+
+    assert pin_data.fetch_data() == pin_multiple_images_data
