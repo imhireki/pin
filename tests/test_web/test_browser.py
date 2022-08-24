@@ -65,3 +65,29 @@ class TestChromium:
         chromium.close()
         assert chromium._driver.close.called
 
+
+class TestFirefox:
+    @pytest.mark.web_driver
+    def test_driver(self):
+        firefox = browser.Firefox(headless=False)
+        firefox.setup_driver()
+        firefox.close()
+
+    @pytest.mark.parametrize('options', [
+        {"headless": True, "binary": "./firefox"}, {"headless": False}
+    ])
+    def test_setup_driver(self, mocker, options):
+        mocker.patch('selenium.webdriver.FirefoxOptions')
+        driver_mock = mocker.patch('selenium.webdriver.Firefox')
+
+        firefox = browser.Firefox(**options)
+        firefox.setup_driver()
+
+        driver_options_mock = driver_mock.call_args.kwargs['options']
+        if  'binary' in options:
+            assert driver_options_mock.binary_location == options['binary']
+        assert driver_options_mock.headless is options['headless']
+        assert driver_options_mock.set_preference.call_args.args == (
+            'profile_directory', firefox._driver_data_directory
+        )
+        assert firefox.driver is driver_mock()
