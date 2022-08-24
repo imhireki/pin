@@ -48,3 +48,23 @@ class IBrowser(ABC):
     def close(self) -> None:
         self._driver.close()
 
+
+class Chromium(IBrowser):
+    _driver_data_directory: str = '/tmp/pin/.driver_data/.chrome'
+
+    def __init__(self, **options) -> None:
+        self._options: dict[str, Any] = options
+
+    def _set_driver_options(self, options: dict[str, Any]) -> webdriver.ChromeOptions:
+        driver_options = webdriver.ChromeOptions()
+        driver_options.headless = options['headless']
+
+        if 'binary' in options:
+            driver_options.binary_location = options['binary']
+
+        driver_options.add_argument(f'user-data-dir={self._driver_data_directory}')
+        return driver_options
+
+    def _set_driver(self, driver_options: webdriver.ChromeOptions) -> webdriver.Chrome:
+        return webdriver.Chrome(options=driver_options)
+
