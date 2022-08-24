@@ -68,3 +68,25 @@ class Chromium(IBrowser):
     def _set_driver(self, driver_options: webdriver.ChromeOptions) -> webdriver.Chrome:
         return webdriver.Chrome(options=driver_options)
 
+
+class Firefox(IBrowser):
+    _driver_data_directory: str = '/tmp/pin/driver_data/firefox'
+
+    def __init__(self, **options) -> None:
+        self._options: dict[str, Any] = options
+
+    def _set_driver_options(self, options: dict[str, Any]) -> webdriver.FirefoxOptions:
+        driver_options = webdriver.FirefoxOptions()
+        driver_options.headless = options['headless']
+
+        if 'binary' in options:
+            driver_options.binary_location = options['binary']
+
+        if not os.path.exists(self._driver_data_directory):
+            os.makedirs(self._driver_data_directory)
+        driver_options.set_preference('profile_directory', self._driver_data_directory)
+
+        return driver_options
+
+    def _set_driver(self, driver_options: webdriver.FirefoxOptions) -> webdriver.Firefox:
+        return webdriver.Firefox(options=driver_options)
