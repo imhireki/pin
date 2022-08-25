@@ -36,3 +36,21 @@ class TestWebElementManager:
         assert html_soup is beautiful_soup_mock.return_value
 
 
+class TestGetRequestManager:
+    def test_get(self, mocker):
+        url = 'http://127.0.0.1/'
+        request_mock = mocker.patch('web.data_manager.requests')
+
+        get_request_manager = data_manager.GetRequestManager()
+        response = get_request_manager.get(url)
+
+        assert response is request_mock.get.return_value
+        assert request_mock.get.call_args.args == (url,)
+
+    def test_get_html(self, mocker):
+        response_mock = mocker.Mock()
+
+        get_request_manager = data_manager.GetRequestManager()
+        response_html = get_request_manager.get_html(response_mock)
+
+        assert response_html is response_mock.text
