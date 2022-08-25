@@ -33,3 +33,9 @@ class WebElementManager(IWebDataManager):
         return web_element.get_attribute('outerHTML')
 
 
+class GetRequestManager(IWebDataManager):
+    def get(self, url: str) -> requests.Response:
+        return requests.get(url)
+
+    def get_html(self, response: requests.Response) -> str:
+        return response.text
