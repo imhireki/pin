@@ -8,7 +8,6 @@ from selenium import webdriver
 
 WebDriver = Union[webdriver.Chrome, webdriver.Firefox]
 WebDriverOptions = Union[webdriver.ChromeOptions, webdriver.FirefoxOptions]
-WebDriverProfile = Union[webdriver.FirefoxProfile]
 
 
 class IBrowser(ABC):
@@ -32,7 +31,7 @@ class IBrowser(ABC):
     @abstractmethod
     def _set_driver(self) -> WebDriver: pass
 
-    def scroll_to_page_bottom(self, times=1, timeout=3):
+    def scroll_to_page_bottom(self, times=1, timeout=3) -> None:
         for _ in range(times):
             self._driver.execute_script(
                 'window.scrollTo(0, document.body.scrollHeight);'
@@ -50,7 +49,7 @@ class IBrowser(ABC):
 
 
 class Chromium(IBrowser):
-    _driver_data_directory: str = '/tmp/pin/.driver_data/.chrome'
+    _driver_data_directory: str = '/tmp/pin/driver_data/chrome'
 
     def __init__(self, **options) -> None:
         self._options: dict[str, Any] = options
@@ -84,7 +83,8 @@ class Firefox(IBrowser):
 
         if not os.path.exists(self._driver_data_directory):
             os.makedirs(self._driver_data_directory)
-        driver_options.set_preference('profile_directory', self._driver_data_directory)
+
+        driver_options.set_preference('profile', self._driver_data_directory)
 
         return driver_options
 
