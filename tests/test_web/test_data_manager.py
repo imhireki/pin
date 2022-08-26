@@ -13,7 +13,7 @@ class TestWebElementManager:
         web_element = web_element_manager.get(element, locator_mock, ec_mock)
 
         assert web_element is web_driver_wait_mock.until.return_value
-        assert ec_mock.call_args.args == (locator_mock, element)
+        assert ec_mock.call_args.args == ((locator_mock, element),)
         assert web_driver_wait_mock.until.call_args.args == (ec_mock.return_value,)
 
     def test_get_html(self, mocker):
