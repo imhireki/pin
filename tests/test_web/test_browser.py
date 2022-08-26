@@ -88,6 +88,6 @@ class TestFirefox:
             assert driver_options_mock.binary_location == options['binary']
         assert driver_options_mock.headless is options['headless']
         assert driver_options_mock.set_preference.call_args.args == (
-            'profile_directory', firefox._driver_data_directory
+            'profile', firefox._driver_data_directory
         )
         assert firefox.driver is driver_mock()
