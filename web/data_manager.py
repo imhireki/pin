@@ -27,7 +27,7 @@ class WebElementManager(IWebDataManager):
 
     def get(self, element: str, locator: By = By.CSS_SELECTOR,
             condition: EC = EC.presence_of_element_located) -> WebElement:
-        return self._web_driver_wait.until(condition(locator, element))
+        return self._web_driver_wait.until(condition((locator, element)))
 
     def get_html(self, web_element: WebElement) -> str:
         return web_element.get_attribute('outerHTML')
