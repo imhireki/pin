@@ -34,3 +34,10 @@ class PostgreSQLConnection(ISQLConnection):
     def connect(self) -> None:
         self._connection = psycopg.connect(**self._connection_options)
 
+
+class MySQLConnection(ISQLConnection):
+    _connection: mysql.connector.MySQLConnection
+
+    def connect(self) -> None:
+        self._connection = mysql.connector.connect(**self._connection_options)
+
