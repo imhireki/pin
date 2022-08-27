@@ -26,3 +26,11 @@ class ISQLConnection:
 
     def get_cursor(self) -> DBCursor:
         return self._connection.cursor()
+
+
+class PostgreSQLConnection(ISQLConnection):
+    _connection: psycopg.Connection
+
+    def connect(self) -> None:
+        self._connection = psycopg.connect(**self._connection_options)
+
