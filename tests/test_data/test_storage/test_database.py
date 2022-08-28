@@ -91,3 +91,14 @@ class TestPostgreSQLStorage:
             pin_id, pin_data['hashtag'][1]
         ]
 
+
+class TestMySQLStorage:
+    def test_storage(self, mocker):
+        connection_mock = mocker.patch('data.storage.database.MySQLConnection')
+        database_config = {"database": "db", "user": "u", "password": "pass",
+                           "host": "localhost"}
+
+        database.MySQLStorage(**database_config)
+
+        assert connection_mock.call_args.kwargs == database_config
+
