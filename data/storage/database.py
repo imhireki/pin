@@ -126,3 +126,9 @@ class PostgreSQLStorage(IDatabaseStorage):
         )
         self._connection.connect()
 
+
+class MySQLStorage(IDatabaseStorage):
+    def __init__(self, database: str, user: str, password: str, **extra_options) -> None:
+        self._connection = MySQLConnection(database=database, user=user,
+                                           password=password, **extra_options)
+        self._connection.connect()
