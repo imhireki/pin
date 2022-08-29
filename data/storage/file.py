@@ -34,3 +34,28 @@ class CSVStorage(IFileStorage):
                 return url
         return None
 
+
+class JsonStorage(IFileStorage):
+    def __init__(self, filename: str) -> None:
+        self._filename: str = filename
+
+    def _get_json_data(self) -> list[dict]:
+        if not os.path.exists(self._filename):
+            return []
+
+        with open(self._filename, 'r') as json_file:
+            json_data = json.load(json_file) or []
+        return json_data
+
+    def insert_pin(self, data: dict[str, Union[str, list]]) -> None:
+        json_data = self._get_json_data()
+        json_data.append(data)
+
+        with open(self._filename, 'w') as json_file:
+            json.dump(json_data, json_file)
+
+    def query_pin(self, url: str) -> str:
+        for data in self._get_json_data():
+            if data['url'] == url:
+                return url
+        return None
