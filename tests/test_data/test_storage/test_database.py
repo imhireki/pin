@@ -85,10 +85,10 @@ class TestPostgreSQLStorage:
         ]
 
         assert insert_into_mock.mock_calls[3].kwargs['values'] == [
-            pin_id, pin_data['hashtag'][0]
+            pin_id, pin_data['hashtags'][0]
         ]
         assert insert_into_mock.mock_calls[4].kwargs['values'] == [
-            pin_id, pin_data['hashtag'][1]
+            pin_id, pin_data['hashtags'][1]
         ]
 
 
