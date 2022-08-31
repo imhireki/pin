@@ -35,17 +35,17 @@ def test_mysql_connection(mocker):
 class TestPostgreSQLStorage:
     def test_storage(self, mocker):
         connection_mock = mocker.patch('data.storage.database.PostgreSQLConnection')
-        database_config = {"user": "u", "password": "pass", "host": "localhost"}
+        database_config = {"user": "u", "password": "pass"}
 
         database.PostgreSQLStorage(database="db", **database_config)
 
-        assert connection_mock.call_args.kwargs == dict(dbname="db", **database_config)
+        assert connection_mock.call_args.kwargs == dict(dbname="db", host="localhost", **database_config)
 
     def test_query_pin(self, mocker):
         connection_mock = mocker.patch('data.storage.database.PostgreSQLConnection')
         stored_pin = 'https://www.pinterest.com/pin/123/'
 
-        storage = database.PostgreSQLStorage(*[_ for _ in range(4)])
+        storage = database.PostgreSQLStorage(*[_ for _ in range(3)])
         select_from_mock = mocker.patch.object(
             storage, '_select_from',
             mocker.Mock(return_value=[(stored_pin,)])
@@ -56,7 +56,7 @@ class TestPostgreSQLStorage:
 
     def test_insert_pin(self, mocker):
         connection_mock = mocker.patch('data.storage.database.PostgreSQLConnection')
-        storage = database.PostgreSQLStorage(*[_ for _ in range(4)])
+        storage = database.PostgreSQLStorage(*[_ for _ in range(3)])
         select_from_mock = mocker.patch.object(storage, '_select_from')
         insert_into_mock = mocker.patch.object(storage, '_insert_into')
 
