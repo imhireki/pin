@@ -20,19 +20,17 @@ class CSVStorage(IFileStorage):
     def insert_pin(self, data: dict[str, Union[str, list]]) -> None:
         with open(self._filename, 'a') as csv_file:
             pin_writer = csv.writer(csv_file)
-            pin_writer.writerow(data)
+            pin_writer.writerow(list(data.values()))
 
     def query_pin(self, url: str) -> str:
         if not os.path.exists(self._filename):
             return None
 
         with open(self._filename, 'r') as csv_file:
-            csv_data = list(csv.reader(csv_file)) or []
-
-        for data in csv_data:
-            if data['url'] == url:
-                return url
-        return None
+            for data in csv.reader(csv_file):
+                if data[0] == url:
+                    return url
+            return None
 
 
 class JsonStorage(IFileStorage):
