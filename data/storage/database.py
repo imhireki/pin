@@ -120,9 +120,9 @@ class IDatabaseStorage(ABC):
 
 
 class PostgreSQLStorage(IDatabaseStorage):
-    def __init__(self, database: str, user: str, password: str, host: str, **extra_options) -> None:
+    def __init__(self, database: str, user: str, password: str, **extra_options) -> None:
         self._connection = PostgreSQLConnection(
-            dbname=database, user=user, password=password, host=host, **extra_options
+            dbname=database, user=user, password=password, host='localhost', **extra_options
         )
         self._connection.connect()
 
