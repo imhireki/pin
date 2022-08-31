@@ -5,7 +5,7 @@ class TestCSVStorage:
     def test_query_pin(self, mocker):
         mocker.patch('os.path.exists')
         stored_data = {"url": "my_pin_url"}
-        mocker.patch('csv.reader', return_value=[stored_data])
+        mocker.patch('csv.reader', return_value=[list(stored_data.values())])
 
         storage = file.CSVStorage('_')
 
@@ -18,7 +18,9 @@ class TestCSVStorage:
         storage = file.CSVStorage('_')
         storage.insert_pin(new_pin_data)
 
-        assert csv_writer_mock.return_value.writerow.call_args.args == (new_pin_data,)
+        assert csv_writer_mock.return_value.writerow.call_args.args == (
+            list(new_pin_data.values()),
+        )
 
 
 class TestJsonStorage:
