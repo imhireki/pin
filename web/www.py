@@ -21,25 +21,26 @@ class Pinterest:
                 search_url += f'+{word}'
             else:
                 search_url += word
-
         return search_url
 
     def perform_login(self) -> None:
         try:
             email_input = self._web_element_manager.get(
                 settings.ELEMENTS['EMAIL_INPUT']['element']
-            ).send_keys(settings.CREDENTIALS['EMAIL'])
+                ).send_keys(settings.CREDENTIALS['EMAIL'])
 
             password_input = self._web_element_manager.get(
                 settings.ELEMENTS['PASSWORD_INPUT']['element']
-            ).send_keys(settings.CREDENTIALS['PASSWORD'], Keys.ENTER)
+                ).send_keys(settings.CREDENTIALS['PASSWORD'], Keys.ENTER)
         except TimeoutException:
             return
 
     def find_pins_urls(self) -> list[str]:
-        pins_element = self._web_element_manager.get(settings.ELEMENTS['PINS']['element'])
+        pins_element = self._web_element_manager.get(
+            settings.ELEMENTS['PINS']['element'])
         pins_html = self._web_element_manager.get_html(pins_element)
-        links_soup = self._web_element_manager.make_html_soup(pins_html).find_all('a')
+        links_soup = self._web_element_manager.make_html_soup(
+            pins_html).find_all('a')
 
         return list({
             '{}{}'.format(settings.URLS['HOME'], link.get('href'))

@@ -8,9 +8,8 @@ import psycopg
 DBConnection = Union[psycopg.Connection, mysql.connector.MySQLConnection]
 DBCursor = Union[psycopg.Cursor, mysql.connector.cursor.MySQLCursor]
 
-
-class ISQLConnection:
-    def __init__(self, **connection_options) -> None:
+class ISQLConnection(ABC):
+    def __init__(self, **connection_options: Any) -> None:
         self._connection_options: dict[str, Any] = connection_options
         self._connection: DBConnection = None
 
@@ -47,10 +46,11 @@ class MySQLConnection(ISQLConnection):
 
 class IDatabaseStorage(ABC):
     @property
-    def connection(self):
+    def connection(self) -> ISQLConnection:
         return self._connection
 
-    def _insert_into(self, table: str, columns: list[str], values: list[str]) -> None:
+    def _insert_into(self, table: str, columns: list[str],
+                     values: list[str]) -> None:
         cursor = self._connection.get_cursor()
 
         column_slots = (('{}, ' * len(columns))[:-2]).format(*columns)
@@ -64,7 +64,8 @@ class IDatabaseStorage(ABC):
         cursor.close()
         self._connection.commit()
 
-    def _select_from(self, table: str, column: list[str], query: list[str]) -> dict:
+    def _select_from(self, table: str, column: list[str],
+                     query: list[str]) -> dict:
         cursor = self._connection.get_cursor()
 
         table_column = f'{table}.{column}'
@@ -120,15 +121,20 @@ class IDatabaseStorage(ABC):
 
 
 class PostgreSQLStorage(IDatabaseStorage):
-    def __init__(self, database: str, user: str, password: str, **extra_options) -> None:
+    def __init__(self, database: str, user: str,
+                 password: str, **extra_options: Any) -> None:
+
         self._connection = PostgreSQLConnection(
-            dbname=database, user=user, password=password, host='localhost', **extra_options
-        )
+            dbname=database, user=user, password=password,
+            host='localhost', **extra_options)
         self._connection.connect()
 
 
 class MySQLStorage(IDatabaseStorage):
-    def __init__(self, database: str, user: str, password: str, **extra_options) -> None:
-        self._connection = MySQLConnection(database=database, user=user,
-                                           password=password, **extra_options)
+    def __init__(self, database: str, user: str,
+                 password: str, **extra_options: Any) -> None:
+
+        self._connection = MySQLConnection(
+            database=database, user=user,
+            password=password, **extra_options)
         self._connection.connect()

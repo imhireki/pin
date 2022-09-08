@@ -1,5 +1,6 @@
-from selenium.webdriver.common.by import By
 import os
+
+from selenium.webdriver.common.by import By
 
 
 URLS = {

@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
 from typing import Union, Any
+from abc import ABC
+import json
 
 from bs4 import BeautifulSoup
 import requests
-import json
 
 
 class IPin(ABC):
@@ -29,11 +29,14 @@ class PinData(IPin):
         response = requests.get(self._pin_url)
 
         pin_page_soup = BeautifulSoup(response.text, 'html.parser')
-        script_tag_soup = pin_page_soup.find('script', id='__PWS_DATA__', type='application/json')
+        script_tag_soup = pin_page_soup.find('script',
+                                             id='__PWS_DATA__',
+                                             type='application/json')
 
         script_tag_dict = json.loads(script_tag_soup.text)
-
-        pin_resource = script_tag_dict['props']['initialReduxState']['resources']['PinResource']
+        pin_resource = script_tag_dict['props'][
+            'initialReduxState'
+            ]['resources']['PinResource']
         return pin_resource[list(pin_resource.keys())[0]]['data']
 
     def _get_title(self) -> str:
@@ -53,11 +56,14 @@ class PinData(IPin):
             return [self._raw_pin_data['images']['736x']['url']]
 
         images_carousel = self._raw_pin_data['carousel_data']['carousel_slots']
-        return [carousel_data['images']['736x']['url'] for carousel_data in images_carousel]
+        return [
+            carousel_data['images']['736x']['url']
+            for carousel_data in images_carousel
+        ]
 
 
 class Pin(IPin):
-    _fetched_data: str
+    _fetched_data: dict[str, Union[str, list]]
     _pin_data: PinData
 
     def __init__(self, pin_url: str) -> None:

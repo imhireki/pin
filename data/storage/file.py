@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Union
+import os.path
 import json
 import csv
-import os
 
 
 class IFileStorage(ABC):
@@ -24,13 +24,13 @@ class CSVStorage(IFileStorage):
 
     def query_pin(self, url: str) -> str:
         if not os.path.exists(self._filename):
-            return None
+            return ''
 
         with open(self._filename, 'r') as csv_file:
             for data in csv.reader(csv_file):
                 if data[0] == url:
                     return url
-            return None
+            return ''
 
 
 class JsonStorage(IFileStorage):
@@ -56,4 +56,4 @@ class JsonStorage(IFileStorage):
         for data in self._get_json_data():
             if data['url'] == url:
                 return url
-        return None
+        return ''

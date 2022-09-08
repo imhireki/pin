@@ -2,7 +2,6 @@ import time
 
 from web.data_manager import WebElementManager
 from data.storage.file import CSVStorage, JsonStorage
-from data.storage.database import CSVStorage, JsonStorage
 from web.browser import Chromium, Firefox
 from web.www import Pinterest
 import settings
