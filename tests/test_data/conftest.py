@@ -1,6 +1,11 @@
 import json
+import time
 
 import pytest
+
+from web.browser import Firefox
+from web.www import Pinterest
+import settings
 
 
 base_pin_data = {
@@ -25,6 +30,24 @@ def raw_pin_data():
         "carousel_data": {},
         "images": {"736x": {"url": "img.jpg"}}
     }
+
+@pytest.fixture(scope='session')
+def cookies():
+    browser = Firefox(binary="geckodriver", headless=True)
+    browser.setup_driver()
+
+    browser.get(settings.URLS['LOGIN'])
+    Pinterest(browser.driver).perform_login()
+    time.sleep(3)
+
+    cookies=browser.driver.get_cookies()
+    browser.close()
+
+    print('setup driver')
+
+    return cookies
+
+    print('teardown driver')
 
 @pytest.fixture
 def make_pin_html():

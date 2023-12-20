@@ -1,5 +1,6 @@
 import pytest
 
+from web.data_manager import GetRequestManager
 from data import pin
 
 
@@ -14,8 +15,13 @@ from data import pin
 ])
 def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
     raw_pin_data.update(**carousel_data)
-    mocker.patch('requests.get',
-                 return_value=mocker.Mock(text=make_pin_html(raw_pin_data)))
+
+    response_mock = mocker.patch('requests.Session.get')
+    response_mock.return_value.text = make_pin_html(raw_pin_data)
+
+    get_request_manager = GetRequestManager(
+        web_driver=mocker.Mock(get_cookies=lambda: []))
+
     pin_url = 'https://pinterest.com/pin/123/'
     expected_fetched_data = {
         "url": pin_url,
@@ -26,13 +32,14 @@ def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
         "images": images,
     }
 
-    pin_data = pin.PinData(pin_url)
+    pin_data = pin.PinData(get_request_manager, pin_url)
     fetched_data = pin_data.fetch_data()
 
     assert fetched_data == expected_fetched_data
 
 @pytest.mark.e2e
-def test_pin_single_image_source():
+def test_pin_single_image_source(mocker, cookies):
+    print('single')
     pin_url = 'https://www.pinterest.com/pin/581105158183245043/'
     expected_pin_data = {
         'url': pin_url,
@@ -45,14 +52,18 @@ def test_pin_single_image_source():
             '689217658bbff324dfba0621ce9449fa.jpg'
         ]
     }
+    driver = mocker.Mock(get_cookies=lambda: cookies)
 
-    pin_data = pin.PinData(pin_url)
+    get_request_manager = GetRequestManager(driver)
+    pin_data = pin.PinData(get_request_manager, pin_url)
     fetched_data = pin_data.fetch_data()
 
     assert fetched_data == expected_pin_data
 
+
 @pytest.mark.e2e
-def test_pin_multiple_images_source():
+def test_pin_multiple_images_source(mocker, cookies):
+    print('multiple')
     pin_url = 'https://www.pinterest.com/pin/10485011624488809/'
     expected_pin_data = {
         'url': pin_url,
@@ -69,7 +80,10 @@ def test_pin_multiple_images_source():
         ]
     }
 
-    pin_data = pin.PinData(pin_url)
+    driver = mocker.Mock(get_cookies=lambda: cookies)
+
+    get_request_manager = GetRequestManager(driver)
+    pin_data = pin.PinData(get_request_manager, pin_url)
     fetched_data = pin_data.fetch_data()
 
     assert fetched_data == expected_pin_data
@@ -78,12 +92,13 @@ def test_pin_multiple_images_source():
 class TestPin:
     def test_get_pin_data(self, mocker):
         pin_data_mock = mocker.patch('data.pin.PinData')
+        web_driver_mock = mocker.Mock()
         pin_url = 'url'
 
-        pin_object = pin.Pin(pin_url)
+        pin_object = pin.Pin(web_driver_mock, pin_url)
         pin_data_object = pin_object.get_pin_data()
 
-        assert pin_data_mock.call_args.args == (pin_url,)
+        assert pin_data_mock.call_args.args == (web_driver_mock, pin_url)
         assert pin_data_object is pin_data_mock.return_value
         assert pin_object._pin_data is pin_data_mock.return_value
 
@@ -93,7 +108,7 @@ class TestPin:
             'data.pin.PinData',
             return_value=mocker.Mock(fetch_data=lambda: expected_data))
 
-        pin_object = pin.Pin('url')
+        pin_object = pin.Pin(mocker.Mock(), 'url')
         fetched_data = pin_object.fetch_data()
 
         assert fetched_data == expected_data
@@ -104,7 +119,7 @@ class TestPin:
         ({"images": []}, False)
     ])
     def test_is_valid(self, mocker, fetched_data, validity):
-        pin_object = pin.Pin('url')
+        pin_object = pin.Pin(mocker.Mock(), 'url')
         pin_object._fetched_data = fetched_data
         mocker.patch.object(pin_object, 'fetch_data', return_value=fetched_data)
 

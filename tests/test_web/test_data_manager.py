@@ -40,18 +40,23 @@ class TestWebElementManager:
 class TestGetRequestManager:
     def test_get(self, mocker):
         url = 'http://127.0.0.1/'
-        request_mock = mocker.patch('web.data_manager.requests')
+        session_mock = mocker.patch('requests.Session', )()
+        web_driver_mock = mocker.Mock(
+            get_cookies=lambda: [{'name': 'a', 'value': 'b'}])
 
-        get_request_manager = data_manager.GetRequestManager()
+        get_request_manager = data_manager.GetRequestManager(web_driver_mock)
         response = get_request_manager.get(url)
 
-        assert response is request_mock.get.return_value
-        assert request_mock.get.call_args.args[0] == url
+        assert session_mock.cookies.set.call_args.args == ("a", "b")
+        assert response is session_mock.get.return_value
+        assert session_mock.get.call_args.args[0] == url
 
     def test_get_html(self, mocker):
+        web_driver_mock = mocker.Mock(
+            get_cookies=lambda: [{'name': 'a', 'value': 'b'}])
         response_mock = mocker.Mock()
 
-        get_request_manager = data_manager.GetRequestManager()
+        get_request_manager = data_manager.GetRequestManager(web_driver_mock)
         response_html = get_request_manager.get_html(response_mock)
 
         assert response_html is response_mock.text
