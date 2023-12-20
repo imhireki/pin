@@ -29,13 +29,24 @@ class WebElementManager(IWebDataManager):
             condition: EC = EC.presence_of_element_located) -> WebElement:
         return self._web_driver_wait.until(condition((locator, element)))
 
-    def get_html(self, web_element: WebElement) -> str:
+    def get_html(self, web_element: WebElement) -> str | None:
         return web_element.get_attribute('outerHTML')
 
 
 class GetRequestManager(IWebDataManager):
+    def __init__(self, web_driver: browser.WebDriver) -> None:
+        self.web_driver = web_driver
+
+    def _get_updated_session(self) -> requests.Session:
+        browser_cookies = self.web_driver.get_cookies()
+        session = requests.Session()
+        for cookie in browser_cookies:
+            session.cookies.set(cookie['name'], cookie['value'])
+        return session
+
     def get(self, url: str) -> requests.Response:
-        return requests.get(url)
+        updated_session = self._get_updated_session()
+        return updated_session.get(url)
 
     def get_html(self, response: requests.Response) -> str:
         return response.text

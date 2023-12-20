@@ -4,14 +4,16 @@ import re
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 
-from web.data_manager import WebElementManager
+from web.data_manager import GetRequestManager, WebElementManager
+from web.browser import WebDriver
 from data.pin import Pin
 import settings
 
 
 class Pinterest:
-    def __init__(self, web_element_manager: WebElementManager) -> None:
-        self._web_element_manager: WebElementManager = web_element_manager
+    def __init__(self, web_driver: WebDriver) -> None:
+        self._web_element_manager: WebElementManager = WebElementManager(web_driver)
+        self._get_request_manager: GetRequestManager = GetRequestManager(web_driver)
 
     def make_search_url(self, query: str) -> str:
         search_url = settings.URLS['SEARCH_PIN']
@@ -49,7 +51,7 @@ class Pinterest:
         })
 
     def fetch_pin_data(self, pin_url: str) -> dict[str, Union[str, list]]:
-        pin = Pin(pin_url)
+        pin = Pin(self._get_request_manager, pin_url)
 
         if not pin.is_valid():
             return {}

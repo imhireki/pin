@@ -5,13 +5,17 @@ import json
 from bs4 import BeautifulSoup
 import requests
 
+from web.data_manager import GetRequestManager
+
 
 class IPin(ABC):
     def fetch_data(self) -> dict[str, Union[str, list]]: pass
 
 
 class PinData(IPin):
-    def __init__(self, pin_url: str) -> None:
+    def __init__(self, get_request_manager: GetRequestManager,
+                 pin_url: str) -> None:
+        self.get_request_manager: GetRequestManager = get_request_manager
         self._pin_url: str = pin_url
         self._raw_pin_data: dict[str, Any] = self._fetch_raw_pin_data()
 
@@ -26,13 +30,12 @@ class PinData(IPin):
         }
 
     def _fetch_raw_pin_data(self) -> dict[str, Any]:
-        response = requests.get(self._pin_url)
+        pin_page_response = self.get_request_manager.get(self._pin_url)
+        pin_page_html = self.get_request_manager.get_html(pin_page_response)
+        pin_page_soup = self.get_request_manager.make_html_soup(pin_page_html)
 
-        pin_page_soup = BeautifulSoup(response.text, 'html.parser')
-        script_tag_soup = pin_page_soup.find('script',
-                                             id='__PWS_DATA__',
-                                             type='application/json')
-
+        script_tag_soup = pin_page_soup.find('script', id='__PWS_DATA__',
+                                              type='application/json')
         script_tag_dict = json.loads(script_tag_soup.text)
         pin_resource = script_tag_dict['props'][
             'initialReduxState'
@@ -66,12 +69,14 @@ class Pin(IPin):
     _fetched_data: dict[str, Union[str, list]]
     _pin_data: PinData
 
-    def __init__(self, pin_url: str) -> None:
+    def __init__(self, get_request_manager: GetRequestManager,
+                 pin_url: str) -> None:
+        self.get_request_manager: GetRequestManager = get_request_manager
         self._pin_url: str = pin_url
 
     def get_pin_data(self) -> PinData:
         if not hasattr(self, '_pin_data'):
-            self._pin_data = PinData(self._pin_url)
+            self._pin_data = PinData(self.get_request_manager, self._pin_url)
         return self._pin_data
 
     def fetch_data(self) -> dict[str, Union[str, list]]:
