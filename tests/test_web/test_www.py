@@ -16,9 +16,10 @@ class TestPinterest:
         assert url == search_url
 
     def test_perform_login(self, mocker):
-        web_element_manager_mock = mocker.Mock()
+        web_element_manager_mock = mocker.patch(
+            'web.www.WebElementManager').return_value
 
-        pinterest = www.Pinterest(web_element_manager_mock)
+        pinterest = www.Pinterest(mocker.Mock())
         pinterest.perform_login()
 
         assert (web_element_manager_mock.mock_calls[0].args[0]
@@ -32,11 +33,13 @@ class TestPinterest:
 
     def test_find_pins_urls(self, mocker):
         pins_a_tag = [{"href": "/pin/123/"}]
-        make_html_soup_mock = mocker.Mock(
-            return_value=mocker.Mock(find_all=lambda _: pins_a_tag))
 
-        pinterest = www.Pinterest(
-            mocker.Mock(make_html_soup=make_html_soup_mock))
+        web_element_manager_mock = mocker.patch(
+            'web.www.WebElementManager').return_value
+        web_element_manager_mock.make_html_soup\
+            .return_value.find_all=lambda _: pins_a_tag
+
+        pinterest = www.Pinterest(mocker.Mock())
         pins_urls = pinterest.find_pins_urls()
 
         assert pins_urls == [settings.URLS["HOME"] + pins_a_tag[0]["href"]]
