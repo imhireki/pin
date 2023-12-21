@@ -44,10 +44,19 @@ def test_browser_close(mocker):
 
 class TestChromium:
     @pytest.mark.web_driver
-    def test_driver(self):
-        chromium = browser.Chromium(headless=False)
+    def test_driver(self, mocker):
+        driver_mock = mocker.patch('web.browser.webdriver.Chrome')
+        options_mock = mocker.patch('web.browser.webdriver.ChromeOptions')
+
+        chromium = browser.Chromium()
         chromium.setup_driver()
         chromium.close()
+
+        assert chromium.driver == driver_mock.return_value
+        assert (driver_mock.call_args.kwargs['options']
+                == options_mock.return_value)
+        assert driver_mock.return_value.close.called
+
 
     @pytest.mark.parametrize('options', [
         {"headless": True, "binary": "./chromium"},
@@ -70,18 +79,28 @@ class TestChromium:
 
 
 class TestFirefox:
+    # TODO: FIX:
     @pytest.mark.web_driver
-    def test_driver(self):
-        firefox = browser.Firefox(headless=False)
+    def test_driver(self, mocker):
+        driver_mock = mocker.patch('web.browser.webdriver.Firefox')
+        options_mock = mocker.patch('web.browser.webdriver.FirefoxOptions')
+
+        firefox = browser.Firefox()
         firefox.setup_driver()
         firefox.close()
+
+        assert firefox.driver == driver_mock.return_value
+        assert (driver_mock.call_args.kwargs['options']
+                == options_mock.return_value)
+        assert driver_mock.return_value.close.called
+
 
     @pytest.mark.parametrize('options', [
         {"headless": True, "binary": "./firefox"},
         {"headless": False}
     ])
     def test_setup_driver(self, mocker, options):
-        mocker.patch('selenium.webdriver.FirefoxOptions')
+        mocker.patch('web.browser.webdriver.FirefoxOptions')
         driver_mock = mocker.patch('selenium.webdriver.Firefox')
 
         firefox = browser.Firefox(**options)
