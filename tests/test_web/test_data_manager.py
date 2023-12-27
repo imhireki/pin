@@ -5,7 +5,7 @@ def test_web_data_manager_make_html_soup(mocker):
     beautiful_soup_mock = mocker.patch('web.data_manager.BeautifulSoup')
     html = '<html></html>'
 
-    web_element_manager = data_manager.WebElementManager('web_driver')
+    web_element_manager = data_manager.WebElementManager(mocker.Mock())
     html_soup = web_element_manager.make_html_soup(html)
 
     assert beautiful_soup_mock.call_args.args == (html, 'html.parser')
@@ -17,7 +17,7 @@ class TestWebElementManager:
         mocker.patch('web.data_manager.WebDriverWait')
         locator_mock, ec_mock = mocker.Mock, mocker.Mock()
         element = 'ele.ment'
-        web_element_manager = data_manager.WebElementManager('web_driver')
+        web_element_manager = data_manager.WebElementManager(mocker.Mock())
         web_driver_wait_mock = web_element_manager._web_driver_wait
 
         web_element = web_element_manager.get(element, locator_mock, ec_mock)
@@ -29,7 +29,7 @@ class TestWebElementManager:
 
     def test_get_html(self, mocker):
         web_element_mock = mocker.Mock()
-        web_element_manager = data_manager.WebElementManager('web_driver')
+        web_element_manager = data_manager.WebElementManager(mocker.Mock())
 
         html_element = web_element_manager.get_html(web_element_mock)
 
