@@ -1,5 +1,5 @@
-from typing import Union, Any
-from abc import ABC
+from typing import Any
+from abc import ABC, abstractmethod
 import json
 
 from bs4 import BeautifulSoup
@@ -9,7 +9,8 @@ from web.data_manager import GetRequestManager
 
 
 class IPin(ABC):
-    def fetch_data(self) -> dict[str, Union[str, list]]: pass
+    @abstractmethod
+    def fetch_data(self) -> dict[str, list|str]: pass
 
 
 class PinData(IPin):
@@ -19,7 +20,7 @@ class PinData(IPin):
         self._pin_url: str = pin_url
         self._raw_pin_data: dict[str, Any] = self._fetch_raw_pin_data()
 
-    def fetch_data(self) -> dict[str, Union[str, list]]:
+    def fetch_data(self) -> dict[str, str|list[str]]:
         return {
             "url": self._pin_url,
             "title": self._get_title(),
@@ -66,7 +67,7 @@ class PinData(IPin):
 
 
 class Pin(IPin):
-    _fetched_data: dict[str, Union[str, list]]
+    _fetched_data: dict[str, str|list[str]]
     _pin_data: PinData
 
     def __init__(self, get_request_manager: GetRequestManager,
@@ -79,7 +80,7 @@ class Pin(IPin):
             self._pin_data = PinData(self.get_request_manager, self._pin_url)
         return self._pin_data
 
-    def fetch_data(self) -> dict[str, Union[str, list]]:
+    def fetch_data(self) -> dict[str, str|list[str]]:
         self.get_pin_data()
 
         if not hasattr(self, '_fetched_data'):

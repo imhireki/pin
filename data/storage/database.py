@@ -1,17 +1,22 @@
+from typing import Union, Any, TYPE_CHECKING
 from abc import ABC, abstractmethod
-from typing import Union, Any
 
+if TYPE_CHECKING:
+    from mysql.connector.cursor import MySQLCursor, CursorBase
+    from mysql.connector.connection_cext import CMySQLConnection
 import mysql.connector
 import psycopg
 
 
-DBConnection = Union[psycopg.Connection, mysql.connector.MySQLConnection]
-DBCursor = Union[psycopg.Cursor, mysql.connector.cursor.MySQLCursor]
+DBConnection = psycopg.Connection | mysql.connector.MySQLConnection
+DBCursor = Union[psycopg.Cursor , 'MySQLCursor' , 'CursorBase']
+
 
 class ISQLConnection(ABC):
+    _connection: DBConnection
+
     def __init__(self, **connection_options: Any) -> None:
         self._connection_options: dict[str, Any] = connection_options
-        self._connection: DBConnection = None
 
     @abstractmethod
     def connect(self) -> None: pass
@@ -38,13 +43,15 @@ class PostgreSQLConnection(ISQLConnection):
 
 
 class MySQLConnection(ISQLConnection):
-    _connection: mysql.connector.MySQLConnection
+    _connection: Union[mysql.connector.MySQLConnection, 'CMySQLConnection']
 
     def connect(self) -> None:
         self._connection = mysql.connector.connect(**self._connection_options)
 
 
 class IDatabaseStorage(ABC):
+    _connection: ISQLConnection
+
     @property
     def connection(self) -> ISQLConnection:
         return self._connection
@@ -59,13 +66,12 @@ class IDatabaseStorage(ABC):
         sql_statement = 'INSERT INTO {} ({}) VALUES ({});'.format(
             table, column_slots, column_value_slots
         )
-
-        cursor.execute(sql_statement, values)
+        cursor.execute(sql_statement, values)  # type: ignore
         cursor.close()
         self._connection.commit()
 
-    def _select_from(self, table: str, column: list[str],
-                     query: list[str]) -> dict:
+    def _select_from(self, table: str, column: str,
+                     query: dict[str, str|list[str]]) -> list[str]|None:
         cursor = self._connection.get_cursor()
 
         table_column = f'{table}.{column}'
@@ -75,12 +81,12 @@ class IDatabaseStorage(ABC):
             table_column, table, query['column'], column_value_slots
         )
 
-        cursor.execute(sql_statement, query['value'])
+        cursor.execute(sql_statement, query['value'])  # type: ignore
         fetched_rows = cursor.fetchall()
         cursor.close()
         return fetched_rows
 
-    def insert_pin(self, pin_data: dict[str, Union[str, list]]) -> None:
+    def insert_pin(self, pin_data: dict) -> None:
         hashtags = pin_data.pop('hashtags')
         images = pin_data.pop('images')
 
@@ -91,10 +97,10 @@ class IDatabaseStorage(ABC):
         )
 
         selected_rows_with_id = self._select_from(
-            column='id', table='pin',
+            table='pin', column='id',
             query={"column": "url", "value": [pin_data['url']]}
         )
-        pin_id = selected_rows_with_id[0][0]
+        pin_id = selected_rows_with_id[0][0]  # type: ignore
 
         for image in images:
             self._insert_into(
@@ -116,7 +122,7 @@ class IDatabaseStorage(ABC):
             query={"column": "url", "value": [url]}
         )
         if not selected_rows_with_url:
-            return
+            return ''
         return selected_rows_with_url[0][0]
 
 

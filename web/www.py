@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Any
 import re
 
 from selenium.common.exceptions import TimeoutException
@@ -41,6 +41,10 @@ class Pinterest:
         pins_element = self._web_element_manager.get(
             settings.ELEMENTS['PINS']['element'])
         pins_html = self._web_element_manager.get_html(pins_element)
+
+        if not pins_html:
+            return []
+
         links_soup = self._web_element_manager.make_html_soup(
             pins_html).find_all('a')
 
@@ -50,7 +54,7 @@ class Pinterest:
             if re.search('^/pin/[0-9]+/$', link.get('href'))
         })
 
-    def fetch_pin_data(self, pin_url: str) -> dict[str, Union[str, list]]:
+    def fetch_pin_data(self, pin_url: str) -> dict[str, Any]:
         pin = Pin(self._get_request_manager, pin_url)
 
         if not pin.is_valid():

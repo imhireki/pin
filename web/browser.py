@@ -13,6 +13,7 @@ WebDriverOptions = Union[webdriver.ChromeOptions, webdriver.FirefoxOptions]
 class IBrowser(ABC):
     _default_options: dict[str, Any] = {"binary": None, "headless": True}
     _driver: WebDriver
+    _options: dict[str, Any]
 
     def setup_driver(self) -> None:
         setup_driver_options = {**self._default_options}
@@ -26,10 +27,12 @@ class IBrowser(ABC):
         return self._driver
 
     @abstractmethod
-    def _set_driver_options(self) -> WebDriverOptions: pass
+    def _set_driver_options(
+        self, options: dict[str, Any]) -> WebDriverOptions: pass
 
     @abstractmethod
-    def _set_driver(self) -> WebDriver: pass
+    def _set_driver(
+        self, driver_options: WebDriverOptions) -> WebDriver: pass
 
     def scroll_to_page_bottom(self, times=1, timeout=3) -> None:
         for _ in range(times):
