@@ -37,9 +37,8 @@ def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
 
     assert fetched_data == expected_fetched_data
 
-@pytest.mark.e2e
+@pytest.mark.web
 def test_pin_single_image_source(mocker, cookies):
-    print('single')
     pin_url = 'https://www.pinterest.com/pin/581105158183245043/'
     expected_pin_data = {
         'url': pin_url,
@@ -61,9 +60,8 @@ def test_pin_single_image_source(mocker, cookies):
     assert fetched_data == expected_pin_data
 
 
-@pytest.mark.e2e
+@pytest.mark.web
 def test_pin_multiple_images_source(mocker, cookies):
-    print('multiple')
     pin_url = 'https://www.pinterest.com/pin/10485011624488809/'
     expected_pin_data = {
         'url': pin_url,

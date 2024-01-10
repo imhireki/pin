@@ -43,7 +43,6 @@ def test_browser_close(mocker):
 
 
 class TestChromium:
-    @pytest.mark.web_driver
     def test_driver(self, mocker):
         driver_mock = mocker.patch('web.browser.webdriver.Chrome')
         options_mock = mocker.patch('web.browser.webdriver.ChromeOptions')
@@ -79,8 +78,6 @@ class TestChromium:
 
 
 class TestFirefox:
-    # TODO: FIX:
-    @pytest.mark.web_driver
     def test_driver(self, mocker):
         driver_mock = mocker.patch('web.browser.webdriver.Firefox')
         options_mock = mocker.patch('web.browser.webdriver.FirefoxOptions')
