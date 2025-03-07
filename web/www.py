@@ -1,4 +1,4 @@
-from typing import Union, Any
+from typing import Any
 import re
 
 from selenium.common.exceptions import TimeoutException
@@ -14,6 +14,7 @@ class Pinterest:
     def __init__(self, web_driver: WebDriver) -> None:
         self._web_element_manager: WebElementManager = WebElementManager(web_driver)
         self._get_request_manager: GetRequestManager = GetRequestManager(web_driver)
+        self._driver = web_driver
 
     def make_search_url(self, query: str) -> str:
         search_url = settings.URLS['SEARCH_PIN']
@@ -24,6 +25,20 @@ class Pinterest:
             else:
                 search_url += word
         return search_url
+
+    def close_google_login(self) -> None:
+        iframe = self._web_element_manager.get(
+            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
+        )
+        self._driver.switch_to.frame(iframe)
+
+        close_button = self._web_element_manager.get(
+            settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"]["element"],
+            settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"]["locator"]
+        )
+        close_button.click()
+
+        self._driver.switch_to.default_content()
 
     def perform_login(self) -> None:
         try:

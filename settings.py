@@ -11,7 +11,16 @@ URLS = {
     "HOME": "https://www.pinterest.com",
 }
 
+
 ELEMENTS = {
+    "GOOGLE_LOGIN": {
+        "element": "#credential_picker_container > iframe:nth-child(1)",
+        "locator": By.CSS_SELECTOR,
+    },
+    "GOOGLE_LOGIN_CLOSE_BUTTON": {
+        "element": "close",
+        "locator": By.ID,
+    },
     "PINS": {
         "element": 'div.vbI:nth-child(1)',
         "locator": By.CSS_SELECTOR
