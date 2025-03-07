@@ -15,8 +15,13 @@ pinterest = Pinterest(browser.driver)
 
 try:
     browser.get(settings.URLS['LOGIN'])
+    time.sleep(2)
+
+    pinterest.close_google_login()
+    time.sleep(1)
+
     pinterest.perform_login()
-    time.sleep(3)
+    time.sleep(2)
 
     for query in ['Luffy Icon']:
         search_url = pinterest.make_search_url(query)
@@ -31,9 +36,11 @@ try:
             if storage.query_pin(data['url']):
                 continue
             storage.insert_pin(data)
+        time.sleep(2)
+
 except KeyboardInterrupt:
     pass
-except Exception:
-    pass
+except Exception as e:
+    raise e
 finally:
     browser.close()
