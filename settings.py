@@ -1,7 +1,9 @@
 import os
 
 from selenium.webdriver.common.by import By
+from dotenv import load_dotenv
 
+load_dotenv()
 
 URLS = {
     "SEARCH_PIN": "https://www.pinterest.com/search/pins/?q=",
@@ -30,7 +32,7 @@ CREDENTIALS = {
 }
 
 DATABASE = {
-    "database": os.getenv('PIN_DATABASE'),
-    "user": os.getenv('PIN_USER'),
-    "password": os.getenv('PIN_PASSWORD'),
+    "database": os.getenv('DB_NAME'),
+    "user": os.getenv('DB_USER'),
+    "password": os.getenv('DB_PASSWORD'),
 }
