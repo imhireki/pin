@@ -15,6 +15,24 @@ class TestPinterest:
 
         assert url == search_url
 
+    def test_close_google_login(self, mocker):
+        web_element_manager = mocker.patch(
+            'web.www.WebElementManager').return_value
+        driver = mocker.Mock()
+
+        pinterest = www.Pinterest(driver)
+        pinterest.close_google_login()
+
+        web_element_manager.get.assert_any_call(
+            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
+        )
+        driver.switch_to.frame.assert_called()
+        web_element_manager.get.assert_any_call(
+            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
+        )
+        web_element_manager.get.return_value.click.assert_called()
+        driver.switch_to.default_content.assert_called()
+
     def test_perform_login(self, mocker):
         web_element_manager_mock = mocker.patch(
             'web.www.WebElementManager').return_value
