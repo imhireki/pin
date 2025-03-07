@@ -52,14 +52,13 @@ def cookies():
 @pytest.fixture
 def make_pin_html():
     def _make_pin_html(raw_pin_data):
-        html_script_data = {"props": {"initialReduxState": {"resources": {
-            "PinResource": {"_": {"data": raw_pin_data}}
-        }}}}
+        pin_id = "123"
+        script_data = {"initialReduxState": {"pins": {pin_id: raw_pin_data}}}
 
-        html_script_data_json_string = json.dumps(html_script_data)
+        html_script_data_json_string = json.dumps(script_data)
 
         html_script = f"""
-            <script id='__PWS_DATA__' type='application/json'>
+            <script id='__PWS_INITIAL_PROPS__' type='application/json'>
                 {html_script_data_json_string}
             </script>
         """
