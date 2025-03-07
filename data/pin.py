@@ -2,8 +2,7 @@ from typing import Any
 from abc import ABC, abstractmethod
 import json
 
-from bs4 import BeautifulSoup
-import requests
+import re
 
 from web.data_manager import GetRequestManager
 
@@ -35,13 +34,13 @@ class PinData(IPin):
         pin_page_html = self.get_request_manager.get_html(pin_page_response)
         pin_page_soup = self.get_request_manager.make_html_soup(pin_page_html)
 
-        script_tag_soup = pin_page_soup.find('script', id='__PWS_DATA__',
-                                              type='application/json')
+        script_tag_soup = pin_page_soup.find(
+            "script", {"id": "__PWS_INITIAL_PROPS__", "type": "application/json"}
+        )
         script_tag_dict = json.loads(script_tag_soup.text)
-        pin_resource = script_tag_dict['props'][
-            'initialReduxState'
-            ]['resources']['PinResource']
-        return pin_resource[list(pin_resource.keys())[0]]['data']
+
+        pin_id = re.search(r'(\d+)/$', self._pin_url).group(1)  # type: ignore
+        return script_tag_dict["initialReduxState"]["pins"][pin_id]
 
     def _get_title(self) -> str:
         return self._raw_pin_data['title']
