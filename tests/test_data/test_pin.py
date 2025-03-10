@@ -4,25 +4,31 @@ from web.data_manager import GetRequestManager
 from data import pin
 
 
-@pytest.mark.parametrize('carousel_data, images', [
-    ({"carousel_data": {}}, ["img.jpg"]),
-    (
-        {"carousel_data": {"carousel_slots": [
-            {"images": {"736x": {"url": "img.jpg"}}}
-        ]}},
-        ["img.jpg"]
-    )
-])
+@pytest.mark.parametrize(
+    "carousel_data, images",
+    [
+        ({"carousel_data": {}}, ["img.jpg"]),
+        (
+            {
+                "carousel_data": {
+                    "carousel_slots": [{"images": {"736x": {"url": "img.jpg"}}}]
+                }
+            },
+            ["img.jpg"],
+        ),
+    ],
+)
 def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
     raw_pin_data.update(**carousel_data)
 
-    response_mock = mocker.patch('requests.Session.get')
+    response_mock = mocker.patch("requests.Session.get")
     response_mock.return_value.text = make_pin_html(raw_pin_data)
 
     get_request_manager = GetRequestManager(
-        web_driver=mocker.Mock(get_cookies=lambda: []))
+        web_driver=mocker.Mock(get_cookies=lambda: [])
+    )
 
-    pin_url = 'https://pinterest.com/pin/123/'
+    pin_url = "https://pinterest.com/pin/123/"
     expected_fetched_data = {
         "url": pin_url,
         "title": raw_pin_data["title"],
@@ -37,19 +43,19 @@ def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
 
     assert fetched_data == expected_fetched_data
 
+
 @pytest.mark.web
 def test_pin_single_image_source(mocker, cookies):
-    pin_url = 'https://www.pinterest.com/pin/581105158183245043/'
+    pin_url = "https://www.pinterest.com/pin/581105158183245043/"
     expected_pin_data = {
-        'url': pin_url,
-        'title': 'Shanks',
-        'description': ' ',
-        'dominant_color': '#fdfdfd',
-        'hashtags': [],
-        'images': [
-            'https://i.pinimg.com/736x/68/92/17/'\
-            '689217658bbff324dfba0621ce9449fa.jpg'
-        ]
+        "url": pin_url,
+        "title": "Shanks",
+        "description": " ",
+        "dominant_color": "#fdfdfd",
+        "hashtags": [],
+        "images": [
+            "https://i.pinimg.com/736x/68/92/17/" "689217658bbff324dfba0621ce9449fa.jpg"
+        ],
     }
     driver = mocker.Mock(get_cookies=lambda: cookies)
 
@@ -62,20 +68,19 @@ def test_pin_single_image_source(mocker, cookies):
 
 @pytest.mark.web
 def test_pin_multiple_images_source(mocker, cookies):
-    pin_url = 'https://www.pinterest.com/pin/10485011624488809/'
+    pin_url = "https://www.pinterest.com/pin/10485011624488809/"
     expected_pin_data = {
-        'url': pin_url,
-        'title': 'Luffy & Zoro Matching Icon',
-        'description': 'One Piece',
-        'dominant_color': '#6e6e90',
-        'hashtags': [],
-        'images': [
-            'https://i.pinimg.com/736x/ed/02/90/'\
-            'ed029092be09633a085854675461cbd1.jpg',
-
-            'https://i.pinimg.com/736x/e3/0f/4b/'\
-            'e30f4b0e9cf0d1d84bdd0fb382238cb9.jpg'
-        ]
+        "url": pin_url,
+        "title": "Luffy & Zoro Matching Icon",
+        "description": "One Piece",
+        "dominant_color": "#6e6e90",
+        "hashtags": [],
+        "images": [
+            "https://i.pinimg.com/736x/ed/02/90/"
+            "ed029092be09633a085854675461cbd1.jpg",
+            "https://i.pinimg.com/736x/e3/0f/4b/"
+            "e30f4b0e9cf0d1d84bdd0fb382238cb9.jpg",
+        ],
     }
 
     driver = mocker.Mock(get_cookies=lambda: cookies)
@@ -89,9 +94,9 @@ def test_pin_multiple_images_source(mocker, cookies):
 
 class TestPin:
     def test_get_pin_data(self, mocker):
-        pin_data_mock = mocker.patch('data.pin.PinData')
+        pin_data_mock = mocker.patch("data.pin.PinData")
         web_driver_mock = mocker.Mock()
-        pin_url = 'url'
+        pin_url = "url"
 
         pin_object = pin.Pin(web_driver_mock, pin_url)
         pin_data_object = pin_object.get_pin_data()
@@ -103,23 +108,24 @@ class TestPin:
     def test_fetch_data(self, mocker):
         expected_data = {"x": 1, "y": 2}
         mocker.patch(
-            'data.pin.PinData',
-            return_value=mocker.Mock(fetch_data=lambda: expected_data))
+            "data.pin.PinData",
+            return_value=mocker.Mock(fetch_data=lambda: expected_data),
+        )
 
-        pin_object = pin.Pin(mocker.Mock(), 'url')
+        pin_object = pin.Pin(mocker.Mock(), "url")
         fetched_data = pin_object.fetch_data()
 
         assert fetched_data == expected_data
         assert pin_object._fetched_data == expected_data
 
-    @pytest.mark.parametrize('fetched_data, validity', [
-        ({"images": ['img.jpg']}, True),
-        ({"images": []}, False)
-    ])
+    @pytest.mark.parametrize(
+        "fetched_data, validity",
+        [({"images": ["img.jpg"]}, True), ({"images": []}, False)],
+    )
     def test_is_valid(self, mocker, fetched_data, validity):
-        pin_object = pin.Pin(mocker.Mock(), 'url')
+        pin_object = pin.Pin(mocker.Mock(), "url")
         pin_object._fetched_data = fetched_data
-        mocker.patch.object(pin_object, 'fetch_data', return_value=fetched_data)
+        mocker.patch.object(pin_object, "fetch_data", return_value=fetched_data)
 
         pin_is_valid = pin_object.is_valid()
 
