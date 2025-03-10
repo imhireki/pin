@@ -7,10 +7,12 @@ import csv
 
 class IFileStorage(ABC):
     @abstractmethod
-    def insert_pin(self) -> None: pass
+    def insert_pin(self) -> None:
+        pass
 
     @abstractmethod
-    def query_pin(self, url: str) -> str: pass
+    def query_pin(self, url: str) -> str:
+        pass
 
 
 class CSVStorage(IFileStorage):
@@ -18,19 +20,19 @@ class CSVStorage(IFileStorage):
         self._filename: str = filename
 
     def insert_pin(self, data: dict[str, Union[str, list]]) -> None:
-        with open(self._filename, 'a') as csv_file:
+        with open(self._filename, "a") as csv_file:
             pin_writer = csv.writer(csv_file)
             pin_writer.writerow(list(data.values()))
 
     def query_pin(self, url: str) -> str:
         if not os.path.exists(self._filename):
-            return ''
+            return ""
 
-        with open(self._filename, 'r') as csv_file:
+        with open(self._filename, "r") as csv_file:
             for data in csv.reader(csv_file):
                 if data[0] == url:
                     return url
-            return ''
+            return ""
 
 
 class JsonStorage(IFileStorage):
@@ -41,7 +43,7 @@ class JsonStorage(IFileStorage):
         if not os.path.exists(self._filename):
             return []
 
-        with open(self._filename, 'r') as json_file:
+        with open(self._filename, "r") as json_file:
             json_data = json.load(json_file) or []
         return json_data
 
@@ -49,11 +51,11 @@ class JsonStorage(IFileStorage):
         json_data = self._get_json_data()
         json_data.append(data)
 
-        with open(self._filename, 'w') as json_file:
+        with open(self._filename, "w") as json_file:
             json.dump(json_data, json_file)
 
     def query_pin(self, url: str) -> str:
         for data in self._get_json_data():
-            if data['url'] == url:
+            if data["url"] == url:
                 return url
-        return ''
+        return ""
