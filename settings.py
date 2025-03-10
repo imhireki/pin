@@ -22,8 +22,8 @@ ELEMENTS = {
         "locator": By.ID,
     },
     "PINS": {
-        "element": 'div.vbI:nth-child(1)',
-        "locator": By.CSS_SELECTOR
+        "element": "div.vbI:nth-child(1)",
+        "locator": By.CSS_SELECTOR,
     },
     "EMAIL_INPUT": {
         "element": "#email",
@@ -31,17 +31,17 @@ ELEMENTS = {
     },
     "PASSWORD_INPUT": {
         "element": "#password",
-        "locator": By.CSS_SELECTOR
+        "locator": By.CSS_SELECTOR,
     },
 }
 
 CREDENTIALS = {
-    "EMAIL": os.getenv('PINTEREST_EMAIL'),
-    "PASSWORD": os.getenv('PINTEREST_PASSWORD')
+    "EMAIL": os.getenv("PINTEREST_EMAIL"),
+    "PASSWORD": os.getenv("PINTEREST_PASSWORD"),
 }
 
 DATABASE = {
-    "database": os.getenv('DB_NAME'),
-    "user": os.getenv('DB_USER'),
-    "password": os.getenv('DB_PASSWORD'),
+    "database": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
 }
