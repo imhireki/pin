@@ -12,25 +12,31 @@ from web import browser
 
 class IWebDataManager(ABC):
     @abstractmethod
-    def get(self): pass
+    def get(self):
+        pass
 
     @abstractmethod
-    def get_html(self) -> str: pass
+    def get_html(self) -> str:
+        pass
 
     def make_html_soup(self, html: str) -> BeautifulSoup:
-        return BeautifulSoup(html, 'html.parser')
+        return BeautifulSoup(html, "html.parser")
 
 
 class WebElementManager(IWebDataManager):
     def __init__(self, web_driver: browser.WebDriver) -> None:
         self._web_driver_wait: WebDriverWait = WebDriverWait(web_driver, 10)
 
-    def get(self, element: str, locator: str = By.CSS_SELECTOR,
-            condition = EC.presence_of_element_located) -> WebElement:
+    def get(
+        self,
+        element: str,
+        locator: str = By.CSS_SELECTOR,
+        condition=EC.presence_of_element_located,
+    ) -> WebElement:
         return self._web_driver_wait.until(condition((locator, element)))
 
     def get_html(self, web_element: WebElement) -> str | None:
-        return web_element.get_attribute('outerHTML')
+        return web_element.get_attribute("outerHTML")
 
 
 class GetRequestManager(IWebDataManager):
@@ -41,7 +47,7 @@ class GetRequestManager(IWebDataManager):
         browser_cookies = self.web_driver.get_cookies()
         session = requests.Session()
         for cookie in browser_cookies:
-            session.cookies.set(cookie['name'], cookie['value'])
+            session.cookies.set(cookie["name"], cookie["value"])
         return session
 
     def get(self, url: str) -> requests.Response:
