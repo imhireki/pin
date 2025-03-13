@@ -50,8 +50,8 @@ class IBrowser[Opts: ArgOptions](ABC):
     def refresh(self) -> None:
         self._driver.refresh()
 
-    def close(self) -> None:
-        self._driver.close()
+    def quit(self) -> None:
+        self._driver.quit()
 
 
 class Chromium(IBrowser):
