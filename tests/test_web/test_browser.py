@@ -49,67 +49,71 @@ def test_browser_close(mocker):
 
 class TestChromium:
     def test_driver(self, mocker):
-        driver_mock = mocker.patch("web.browser.webdriver.Chrome")
-        options_mock = mocker.patch("web.browser.webdriver.ChromeOptions")
+        driver = mocker.patch("web.browser.ChromeDriver")
+        options = mocker.patch("web.browser.ChromeOptions")
 
         chromium = browser.Chromium()
         chromium.setup_driver()
         chromium.close()
 
-        assert chromium.driver == driver_mock.return_value
-        assert driver_mock.call_args.kwargs["options"] == options_mock.return_value
-        assert driver_mock.return_value.close.called
+        assert chromium.driver == driver.return_value
+        assert driver.call_args.kwargs["options"] == options.return_value
+        assert driver.return_value.close.called
 
     @pytest.mark.parametrize(
-        "options", [{"headless": True, "binary": "./chromium"}, {"headless": False}]
+        "raw_options", [{"headless": True, "binary": "./chromium"}, {"headless": False}]
     )
-    def test_setup_driver(self, mocker, options):
-        driver_mock = mocker.patch("selenium.webdriver.Chrome")
-        mocker.patch("selenium.webdriver.ChromeOptions")
+    def test_setup_driver(self, mocker, raw_options):
+        driver = mocker.patch("web.browser.ChromeDriver").return_value
+        options = mocker.patch("web.browser.ChromeOptions").return_value
 
-        chromium = browser.Chromium(**options)
+        chromium = browser.Chromium(**raw_options)
         chromium.setup_driver()
 
-        driver_options_mock = driver_mock.call_args.kwargs["options"]
-        assert driver_options_mock.headless is options["headless"]
-        if "binary" in options:
-            assert driver_options_mock.binary_location == options["binary"]
-        assert (
-            driver_options_mock.add_argument.call_args.args[0]
-            == f"user-data-dir={chromium._driver_data_directory}"
+        assert chromium.driver is driver
+
+        if raw_options["headless"]:
+            options.add_argument.assert_any_call("--headless=new")
+
+        if "binary" in raw_options:
+            assert options.binary_location == raw_options["binary"]
+
+        options.add_argument.assert_any_call(
+            "user-data-dir="+chromium._driver_data_directory
         )
-        assert chromium.driver is driver_mock.return_value
 
 
 class TestFirefox:
     def test_driver(self, mocker):
-        driver_mock = mocker.patch("web.browser.webdriver.Firefox")
-        options_mock = mocker.patch("web.browser.webdriver.FirefoxOptions")
+        driver = mocker.patch("web.browser.FirefoxDriver")
+        options = mocker.patch("web.browser.FirefoxOptions")
 
         firefox = browser.Firefox()
         firefox.setup_driver()
         firefox.close()
 
-        assert firefox.driver == driver_mock.return_value
-        assert driver_mock.call_args.kwargs["options"] == options_mock.return_value
-        assert driver_mock.return_value.close.called
+        assert firefox.driver == driver.return_value
+        assert driver.call_args.kwargs["options"] == options.return_value
+        assert driver.return_value.close.called
 
     @pytest.mark.parametrize(
-        "options", [{"headless": True, "binary": "./firefox"}, {"headless": False}]
+        "raw_options", [{"headless": True, "binary": "./firefox"}, {"headless": False}]
     )
-    def test_setup_driver(self, mocker, options):
-        mocker.patch("web.browser.webdriver.FirefoxOptions")
-        driver_mock = mocker.patch("selenium.webdriver.Firefox")
+    def test_setup_driver(self, mocker, raw_options):
+        options = mocker.patch("web.browser.FirefoxOptions").return_value
+        driver = mocker.patch("web.browser.FirefoxDriver").return_value
 
-        firefox = browser.Firefox(**options)
+        firefox = browser.Firefox(**raw_options)
         firefox.setup_driver()
 
-        driver_options_mock = driver_mock.call_args.kwargs["options"]
-        assert driver_options_mock.headless is options["headless"]
-        if "binary" in options:
-            assert driver_options_mock.binary_location == options["binary"]
-        assert driver_options_mock.set_preference.call_args.args == (
-            "profile",
-            firefox._driver_data_directory,
+        assert firefox.driver is driver
+
+        if raw_options["headless"]:
+            options.add_argument.assert_any_call("-headless")
+
+        if "binary" in raw_options:
+            assert options.binary_location == raw_options["binary"]
+
+        options.set_preference.assert_called_with(
+            "profile", firefox._driver_data_directory
         )
-        assert firefox.driver is driver_mock.return_value
