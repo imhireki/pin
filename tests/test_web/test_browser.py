@@ -38,13 +38,13 @@ def test_browser_refresh(mocker):
     assert chromium._driver.refresh.called
 
 
-def test_browser_close(mocker):
+def test_browser_quit(mocker):
     chromium = browser.Chromium()
     chromium._driver = mocker.Mock()
 
-    chromium.close()
+    chromium.quit()
 
-    assert chromium._driver.close.called
+    assert chromium._driver.quit.called
 
 
 class TestChromium:
@@ -54,11 +54,11 @@ class TestChromium:
 
         chromium = browser.Chromium()
         chromium.setup_driver()
-        chromium.close()
+        chromium.quit()
 
         assert chromium.driver == driver.return_value
         assert driver.call_args.kwargs["options"] == options.return_value
-        assert driver.return_value.close.called
+        assert driver.return_value.quit.called
 
     @pytest.mark.parametrize("raw_options", [{"headless": True}, {"headless": False}])
     def test_setup_driver(self, mocker, raw_options):
@@ -85,11 +85,11 @@ class TestFirefox:
 
         firefox = browser.Firefox()
         firefox.setup_driver()
-        firefox.close()
+        firefox.quit()
 
         assert firefox.driver == driver.return_value
         assert driver.call_args.kwargs["options"] == options.return_value
-        assert driver.return_value.close.called
+        assert driver.return_value.quit.called
 
     @pytest.mark.parametrize("raw_options", [{"headless": True}, {"headless": False}])
     def test_setup_driver(self, mocker, raw_options):
