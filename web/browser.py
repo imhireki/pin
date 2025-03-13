@@ -62,7 +62,9 @@ class Chromium(IBrowser):
 
     def _set_driver_options(self, options: dict[str, Any]) -> ChromeOptions:
         driver_options = ChromeOptions()
-        driver_options.headless = options["headless"]
+
+        if options["headless"]:
+            driver_options.add_argument("--headless=new")
 
         if "binary" in options:
             driver_options.binary_location = options["binary"]
@@ -82,7 +84,9 @@ class Firefox(IBrowser):
 
     def _set_driver_options(self, options: dict[str, Any]) -> FirefoxOptions:
         driver_options = FirefoxOptions()
-        driver_options.headless = options["headless"]
+
+        if options["headless"]:
+            driver_options.add_argument("-headless")
 
         if "binary" in options:
             driver_options.binary_location = options["binary"]
