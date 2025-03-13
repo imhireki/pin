@@ -14,7 +14,7 @@ from selenium.webdriver import (
 
 
 class IBrowser[Opts: ArgOptions](ABC):
-    _default_options: dict[str, Any] = {"binary": None, "headless": True}
+    _default_options: dict[str, Any] = {"headless": True}
     _driver: WebDriver
     _options: dict[str, Any]
 
@@ -66,9 +66,6 @@ class Chromium(IBrowser):
         if options["headless"]:
             driver_options.add_argument("--headless=new")
 
-        if "binary" in options:
-            driver_options.binary_location = options["binary"]
-
         driver_options.add_argument(f"user-data-dir={self._driver_data_directory}")
         return driver_options
 
@@ -87,9 +84,6 @@ class Firefox(IBrowser):
 
         if options["headless"]:
             driver_options.add_argument("-headless")
-
-        if "binary" in options:
-            driver_options.binary_location = options["binary"]
 
         if not os.path.exists(self._driver_data_directory):
             os.makedirs(self._driver_data_directory)
