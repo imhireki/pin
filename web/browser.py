@@ -1,16 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any
 import time
 import os
 
-from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.common.options import ArgOptions
+from selenium.webdriver import (
+    Firefox as FirefoxDriver,
+    Chrome as ChromeDriver,
+    FirefoxOptions,
+    ChromeOptions,
+)
 
 
-WebDriver = Union[webdriver.Chrome, webdriver.Firefox]
-WebDriverOptions = Union[webdriver.ChromeOptions, webdriver.FirefoxOptions]
-
-
-class IBrowser(ABC):
+class IBrowser[Opts: ArgOptions](ABC):
     _default_options: dict[str, Any] = {"binary": None, "headless": True}
     _driver: WebDriver
     _options: dict[str, Any]
@@ -27,11 +30,11 @@ class IBrowser(ABC):
         return self._driver
 
     @abstractmethod
-    def _set_driver_options(self, options: dict[str, Any]) -> WebDriverOptions:
+    def _set_driver_options(self, options: dict[str, Any]) -> Opts:
         pass
 
     @abstractmethod
-    def _set_driver(self, driver_options: WebDriverOptions) -> WebDriver:
+    def _set_driver(self, driver_options: Opts) -> WebDriver:
         pass
 
     def scroll_to_page_bottom(self, times=1, timeout=3) -> None:
@@ -57,8 +60,8 @@ class Chromium(IBrowser):
     def __init__(self, **options: Any) -> None:
         self._options: dict[str, Any] = options
 
-    def _set_driver_options(self, options: dict[str, Any]) -> webdriver.ChromeOptions:
-        driver_options = webdriver.ChromeOptions()
+    def _set_driver_options(self, options: dict[str, Any]) -> ChromeOptions:
+        driver_options = ChromeOptions()
         driver_options.headless = options["headless"]
 
         if "binary" in options:
@@ -67,8 +70,8 @@ class Chromium(IBrowser):
         driver_options.add_argument(f"user-data-dir={self._driver_data_directory}")
         return driver_options
 
-    def _set_driver(self, driver_options: webdriver.ChromeOptions) -> webdriver.Chrome:
-        return webdriver.Chrome(options=driver_options)
+    def _set_driver(self, driver_options: ChromeOptions) -> ChromeDriver:
+        return ChromeDriver(options=driver_options)
 
 
 class Firefox(IBrowser):
@@ -77,8 +80,8 @@ class Firefox(IBrowser):
     def __init__(self, **options: Any) -> None:
         self._options: dict[str, Any] = options
 
-    def _set_driver_options(self, options: dict[str, Any]) -> webdriver.FirefoxOptions:
-        driver_options = webdriver.FirefoxOptions()
+    def _set_driver_options(self, options: dict[str, Any]) -> FirefoxOptions:
+        driver_options = FirefoxOptions()
         driver_options.headless = options["headless"]
 
         if "binary" in options:
@@ -89,7 +92,5 @@ class Firefox(IBrowser):
         driver_options.set_preference("profile", self._driver_data_directory)
         return driver_options
 
-    def _set_driver(
-        self, driver_options: webdriver.FirefoxOptions
-    ) -> webdriver.Firefox:
-        return webdriver.Firefox(options=driver_options)
+    def _set_driver(self, driver_options: FirefoxOptions) -> FirefoxDriver:
+        return FirefoxDriver(options=driver_options)
