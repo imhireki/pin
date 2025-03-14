@@ -66,7 +66,7 @@ class Chromium(IBrowser):
         if options["headless"]:
             driver_options.add_argument("--headless=new")
 
-        driver_options.add_argument(f"user-data-dir={self._driver_data_directory}")
+        driver_options.add_argument(f"--user-data-dir={self._driver_data_directory}")
         return driver_options
 
     def _set_driver(self, driver_options: ChromeOptions) -> ChromeDriver:
@@ -87,7 +87,8 @@ class Firefox(IBrowser):
 
         if not os.path.exists(self._driver_data_directory):
             os.makedirs(self._driver_data_directory)
-        driver_options.set_preference("profile", self._driver_data_directory)
+
+        driver_options.profile = self._driver_data_directory
         return driver_options
 
     def _set_driver(self, driver_options: FirefoxOptions) -> FirefoxDriver:
