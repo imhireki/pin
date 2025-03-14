@@ -66,6 +66,9 @@ class Chromium(IBrowser):
         if options["headless"]:
             driver_options.add_argument("--headless=new")
 
+        # Keeps the driver from closing by itself (like firefox)
+        driver_options.add_experimental_option("detach", True)
+
         driver_options.add_argument(f"--user-data-dir={self._driver_data_directory}")
         return driver_options
 

@@ -73,6 +73,8 @@ class TestChromium:
         if raw_options["headless"]:
             options.add_argument.assert_any_call("--headless=new")
 
+        options.add_experimental_option.assert_called_with("detach", True)
+
         options.add_argument.assert_any_call(
             "--user-data-dir=" + chromium._driver_data_directory
         )
