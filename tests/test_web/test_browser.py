@@ -74,7 +74,7 @@ class TestChromium:
             options.add_argument.assert_any_call("--headless=new")
 
         options.add_argument.assert_any_call(
-            "user-data-dir="+chromium._driver_data_directory
+            "--user-data-dir=" + chromium._driver_data_directory
         )
 
 
@@ -103,7 +103,4 @@ class TestFirefox:
 
         if raw_options["headless"]:
             options.add_argument.assert_any_call("-headless")
-
-        options.set_preference.assert_called_with(
-            "profile", firefox._driver_data_directory
-        )
+        assert options.profile == firefox._driver_data_directory
