@@ -44,13 +44,8 @@ def cookies():
     time.sleep(3)
 
     cookies = browser.driver.get_cookies()
-    browser.close()
-
-    print("setup driver")
-
+    browser.quit()
     return cookies
-
-    print("teardown driver")
 
 
 @pytest.fixture
