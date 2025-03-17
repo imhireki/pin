@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Union
 import os.path
 import json
 import csv
@@ -7,7 +6,7 @@ import csv
 
 class IFileStorage(ABC):
     @abstractmethod
-    def insert_pin(self) -> None:
+    def insert_pin(self, data: dict) -> None:
         pass
 
     @abstractmethod
@@ -19,7 +18,7 @@ class CSVStorage(IFileStorage):
     def __init__(self, filename: str) -> None:
         self._filename: str = filename
 
-    def insert_pin(self, data: dict[str, Union[str, list]]) -> None:
+    def insert_pin(self, data: dict) -> None:
         with open(self._filename, "a") as csv_file:
             pin_writer = csv.writer(csv_file)
             pin_writer.writerow(list(data.values()))
@@ -47,7 +46,7 @@ class JsonStorage(IFileStorage):
             json_data = json.load(json_file) or []
         return json_data
 
-    def insert_pin(self, data: dict[str, Union[str, list]]) -> None:
+    def insert_pin(self, data: dict) -> None:
         json_data = self._get_json_data()
         json_data.append(data)
 
