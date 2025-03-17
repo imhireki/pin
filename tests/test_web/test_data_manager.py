@@ -1,15 +1,14 @@
 from web import data_manager
 
 
-def test_web_data_manager_make_html_soup(mocker):
-    beautiful_soup_mock = mocker.patch("web.data_manager.BeautifulSoup")
+def test_make_html_soup(mocker):
+    beautiful_soup = mocker.patch("web.data_manager.BeautifulSoup")
     html = "<html></html>"
 
-    web_element_manager = data_manager.WebElementManager(mocker.Mock())
-    html_soup = web_element_manager.make_html_soup(html)
+    html_soup = data_manager.make_html_soup(html)
 
-    assert beautiful_soup_mock.call_args.args == (html, "html.parser")
-    assert html_soup is beautiful_soup_mock.return_value
+    assert beautiful_soup.call_args.args == (html, "html.parser")
+    assert html_soup is beautiful_soup.return_value
 
 
 class TestWebElementManager:
@@ -39,9 +38,7 @@ class TestWebElementManager:
 class TestGetRequestManager:
     def test_get(self, mocker):
         url = "http://127.0.0.1/"
-        session_mock = mocker.patch(
-            "requests.Session",
-        )()
+        session_mock = mocker.patch("requests.Session").return_value
         web_driver_mock = mocker.Mock(get_cookies=lambda: [{"name": "a", "value": "b"}])
 
         get_request_manager = data_manager.GetRequestManager(web_driver_mock)
