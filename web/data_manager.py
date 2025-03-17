@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
@@ -10,20 +8,11 @@ import requests
 from web import browser
 
 
-class IWebDataManager(ABC):
-    @abstractmethod
-    def get(self):
-        pass
-
-    @abstractmethod
-    def get_html(self) -> str:
-        pass
-
-    def make_html_soup(self, html: str) -> BeautifulSoup:
-        return BeautifulSoup(html, "html.parser")
+def make_html_soup(html: str) -> BeautifulSoup:
+    return BeautifulSoup(html, "html.parser")
 
 
-class WebElementManager(IWebDataManager):
+class WebElementManager:
     def __init__(self, web_driver: browser.WebDriver) -> None:
         self._web_driver_wait: WebDriverWait = WebDriverWait(web_driver, 10)
 
@@ -39,7 +28,7 @@ class WebElementManager(IWebDataManager):
         return web_element.get_attribute("outerHTML")
 
 
-class GetRequestManager(IWebDataManager):
+class GetRequestManager:
     def __init__(self, web_driver: browser.WebDriver) -> None:
         self.web_driver = web_driver
 

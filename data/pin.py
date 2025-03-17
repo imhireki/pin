@@ -4,7 +4,7 @@ import json
 
 import re
 
-from web.data_manager import GetRequestManager
+from web.data_manager import GetRequestManager, make_html_soup
 
 
 class IPin(ABC):
@@ -32,8 +32,7 @@ class PinData(IPin):
     def _fetch_raw_pin_data(self) -> dict[str, Any]:
         pin_page_response = self.get_request_manager.get(self._pin_url)
         pin_page_html = self.get_request_manager.get_html(pin_page_response)
-        pin_page_soup = self.get_request_manager.make_html_soup(pin_page_html)
-
+        pin_page_soup = make_html_soup(pin_page_html)
         script_tag_soup = pin_page_soup.find(
             "script", {"id": "__PWS_INITIAL_PROPS__", "type": "application/json"}
         )
