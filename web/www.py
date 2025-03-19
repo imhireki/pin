@@ -3,11 +3,14 @@ import re
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
+from bs4 import Tag
+from bs4._typing import _QueryResults
 
-from web.data_manager import GetRequestManager, WebElementManager
+from web.data_manager import GetRequestManager, WebElementManager, make_html_soup
 from web.browser import WebDriver
 from data.pin import Pin
 import settings
+
 
 
 class Pinterest:
@@ -52,24 +55,39 @@ class Pinterest:
         except TimeoutException:
             return
 
-    def find_pins_urls(self) -> list[str]:
-        pins_element = self._web_element_manager.get(
-            settings.ELEMENTS["PINS"]["element"]
-        )
+    def _find_a_tags(self) -> list:
+        pins_element = self._web_element_manager.get(**settings.ELEMENTS["PINS"])
         pins_html = self._web_element_manager.get_html(pins_element)
 
         if not pins_html:
             return []
 
-        links_soup = self._web_element_manager.make_html_soup(pins_html).find_all("a")
+        return make_html_soup(pins_html).find_all("a")
 
-        return list(
-            {
-                "{}{}".format(settings.URLS["HOME"], link.get("href"))
-                for link in links_soup
-                if re.search("^/pin/[0-9]+/$", link.get("href"))
-            }
-        )
+    def _extract_pin_relative_url(self, tag: _QueryResults) -> str:
+        if not isinstance(tag, Tag):
+            raise TypeError(
+                f"Expected an instance of Tag, but got {tag} {type(tag).__name__}"
+            )
+
+        href = tag.get("href")
+
+        if not isinstance(href, str) or not re.search(r"/pin/[0-9]+/$", href):
+            raise ValueError(
+                "Invalid href: Expected a string matching '/pin/[0-9]+/$', "
+                f"but got {href} ({type(href).__name__})"
+            )
+
+        return href
+
+    def find_pins_urls(self) -> list[str]:
+        urls = []
+        for tag in self._find_a_tags():
+            try:
+                urls.append(settings.URLS["HOME"] + self._extract_pin_relative_url(tag))
+            except (TypeError, ValueError):
+                continue
+        return urls
 
     def fetch_pin_data(self, pin_url: str) -> dict[str, Any]:
         pin = Pin(self._get_request_manager, pin_url)
