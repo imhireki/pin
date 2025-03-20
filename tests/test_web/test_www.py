@@ -60,22 +60,22 @@ class TestPinterest:
             == settings.CREDENTIALS["PASSWORD"]
         )
 
-    @pytest.mark.parametrize("html,urls", [
+    @pytest.mark.parametrize("html,ids", [
         ["", []],
         ["<html></html>", []],
         [
             "<html> <a href='/pin/123/'>link1</a> <a href='/invalid/'>link2</a> </html>",
-            [settings.URLS["HOME"] + "/pin/123/"]
+            ["123"]
          ],
     ])
-    def test_find_pins_urls(self, mocker, html, urls):
+    def test_find_pin_ids(self, mocker, html, ids):
         web_element_manager = mocker.patch("web.www.WebElementManager").return_value
         web_element_manager.get_html.return_value = html
 
         pinterest = www.Pinterest(mocker.Mock())
-        pins_urls = pinterest.find_pins_urls()
+        pins_urls = pinterest.find_pin_ids()
 
-        assert pins_urls == urls
+        assert pins_urls == ids
 
     @pytest.mark.parametrize(
         "validity, data", [(True, {"title": "title"}), (False, {})]
