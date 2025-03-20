@@ -64,7 +64,7 @@ class Pinterest:
 
         return make_html_soup(pins_html).find_all("a")
 
-    def _extract_pin_relative_url(self, tag: _QueryResults) -> str:
+    def _extract_pin_id(self, tag: _QueryResults) -> str:
         if not isinstance(tag, Tag):
             raise TypeError(
                 f"Expected an instance of Tag, but got {tag} {type(tag).__name__}"
@@ -72,19 +72,21 @@ class Pinterest:
 
         href = tag.get("href")
 
-        if not isinstance(href, str) or not re.search(r"/pin/[0-9]+/$", href):
+        pin_id_match = re.search(r"/pin/(\d+)/$", str(href))
+
+        if not pin_id_match:
             raise ValueError(
                 "Invalid href: Expected a string matching '/pin/[0-9]+/$', "
                 f"but got {href} ({type(href).__name__})"
             )
 
-        return href
+        return pin_id_match.group(1)
 
-    def find_pins_urls(self) -> list[str]:
+    def find_pin_ids(self) -> list[str]:
         urls = []
         for tag in self._find_a_tags():
             try:
-                urls.append(settings.URLS["HOME"] + self._extract_pin_relative_url(tag))
+                urls.append(self._extract_pin_id(tag))
             except (TypeError, ValueError):
                 continue
         return urls
