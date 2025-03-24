@@ -1,45 +1,86 @@
+from copy import deepcopy
+
 import pytest
 
 from web.data_manager import GetRequestManager
+from data.pin import Pin, PinData
 from data import pin
 
 
-@pytest.mark.parametrize(
-    "carousel_data, images",
-    [
-        ({"carousel_data": {}}, ["img.jpg"]),
-        (
-            {
-                "carousel_data": {
-                    "carousel_slots": [{"images": {"736x": {"url": "img.jpg"}}}]
-                }
-            },
-            ["img.jpg"],
-        ),
-    ],
-)
-def test_pin_data(mocker, raw_pin_data, make_pin_html, carousel_data, images):
-    raw_pin_data.update(**carousel_data)
+class TestPinData:
+    def test_fetch_data(self, mocker):
+        pin_data = PinData("123", mocker.Mock())
 
-    response_mock = mocker.patch("requests.Session.get")
-    response_mock.return_value.text = make_pin_html(raw_pin_data)
+        fetch_data_root = mocker.patch.object(
+            pin_data, "_fetch_data_root", lambda: {"data": "root"}
+        )
+        get_images = mocker.patch.object(pin_data, "_get_images")
+        url = mocker.patch.object(pin_data, "_url")
 
-    get_request_manager = GetRequestManager(
-        web_driver=mocker.Mock(get_cookies=lambda: [])
+        data = pin_data.fetch_data()
+
+        custom = {
+            "images": get_images.return_value,
+            "url": url,
+            "id": "123",
+        }
+        assert data == dict(custom=custom, scraped=fetch_data_root())
+
+    def test_make_url(self, mocker):
+        pin_data = PinData("123", mocker.Mock())
+        assert pin_data._make_url("123") == "https://www.pinterest.com/pin/123"
+
+    @pytest.mark.parametrize(
+        "html,result",
+        [
+            ("<script id='json not found' type='text/javascript'></script>", {}),
+            (
+                """
+            <script id='__PWS_INITIAL_PROPS__' type='application/json'>{}</script>
+            """,
+                {},
+            ),
+            (
+                """
+            <script id='__PWS_INITIAL_PROPS__' type='application/json'>
+                {"initialReduxState": {"pins": {"123": {"valid": "data"} }}}
+            </script>
+            """,
+                {"valid": "data"},
+            ),
+        ],
     )
+    def test_fetch_data_root(self, mocker, html, result):
+        get_request_manager = mocker.patch("data.pin.GetRequestManager")
+        get_request_manager.get_html = lambda _: html
 
-    pin_url = "https://pinterest.com/pin/123/"
-    expected_fetched_data = {
-        "url": pin_url,
-        "title": raw_pin_data["title"],
-        "description": raw_pin_data["description"],
-        "dominant_color": raw_pin_data["dominant_color"],
-        "hashtags": raw_pin_data["hashtags"],
-        "images": images,
-    }
+        pin_data = PinData("123", get_request_manager)
+        data_root = pin_data._fetch_data_root()
 
-    pin_data = pin.PinData(get_request_manager, pin_url)
-    fetched_data = pin_data.fetch_data()
+        assert data_root == result
+
+    @pytest.mark.parametrize(
+        "root,result",
+        [
+            ({}, []),
+            ({"carousel_data": {}, "images": {}}, []),
+            (
+                {
+                    "carousel_data": {
+                        "carousel_slots": [
+                            {"images": {"736x": {"url": "carousel1.jpg"}}},
+                            {"images": {"736x": {"url": "carousel2.jpg"}}},
+                        ]
+                    }
+                },
+                ["carousel1.jpg", "carousel2.jpg"],
+            ),
+            ({"images": {"736x": {"url": "img.jpg"}}}, ["img.jpg"]),
+        ],
+    )
+    def test_get_images(self, mocker, root, result):
+        pin_data = PinData("", mocker.Mock())
+        assert pin_data._get_images(root) == result
 
     assert fetched_data == expected_fetched_data
 
