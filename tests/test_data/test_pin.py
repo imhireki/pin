@@ -82,7 +82,48 @@ class TestPinData:
         pin_data = PinData("", mocker.Mock())
         assert pin_data._get_images(root) == result
 
-    assert fetched_data == expected_fetched_data
+
+class TestPin:
+    def test_fetch_data(self, mocker):
+        extra = {"a": "1", "b": 2}
+        clean_raw_data = {
+            "custom": {"id": "1", "url": "url", "images": ["img"]},
+            "scraped": {
+                "title": "title",
+                "description": "desc",
+                "hashtags": ["#a"],
+                "dominant_color": ["#ffffff"],
+            },
+        }
+        raw_data = deepcopy(clean_raw_data)
+        raw_data["scraped"].update(extra)
+
+        pin_data = mocker.Mock()
+        pin_data.fetch_data = mocker.Mock(return_value=raw_data)
+
+        pin = Pin(pin_data)
+        processed = pin.fetch_data()
+
+        pin_data.fetch_data.assert_called()
+        assert pin._raw == raw_data
+        assert processed == dict(**clean_raw_data["custom"], **clean_raw_data["scraped"])
+        assert pin._processed == processed
+
+    @pytest.mark.parametrize("data,is_valid", [
+        ({"images": []}, False),
+        ({"images": ["img1"]}, False),
+        ({"images": ["img1"], "title": "title"}, True),
+        ({"images": ["img1"], "description": "desc"}, True),
+        ({"images": ["img1"], "hashtags": ["#hash"]}, True),
+    ])
+    def test_is_valid(self, mocker, data, is_valid):
+        pin = Pin(mocker.Mock())
+        pin._processed = {"x": "y"}
+
+        images = data.pop("images")
+        pin._raw = {"custom": {"images": images}, "scraped": data}
+
+        assert pin.is_valid() == is_valid
 
 
 @pytest.mark.web
@@ -131,43 +172,3 @@ def test_pin_multiple_images_source(mocker, cookies):
     fetched_data = pin_data.fetch_data()
 
     assert fetched_data == expected_pin_data
-
-
-class TestPin:
-    def test_get_pin_data(self, mocker):
-        pin_data_mock = mocker.patch("data.pin.PinData")
-        web_driver_mock = mocker.Mock()
-        pin_url = "url"
-
-        pin_object = pin.Pin(web_driver_mock, pin_url)
-        pin_data_object = pin_object.get_pin_data()
-
-        assert pin_data_mock.call_args.args == (web_driver_mock, pin_url)
-        assert pin_data_object is pin_data_mock.return_value
-        assert pin_object._pin_data is pin_data_mock.return_value
-
-    def test_fetch_data(self, mocker):
-        expected_data = {"x": 1, "y": 2}
-        mocker.patch(
-            "data.pin.PinData",
-            return_value=mocker.Mock(fetch_data=lambda: expected_data),
-        )
-
-        pin_object = pin.Pin(mocker.Mock(), "url")
-        fetched_data = pin_object.fetch_data()
-
-        assert fetched_data == expected_data
-        assert pin_object._fetched_data == expected_data
-
-    @pytest.mark.parametrize(
-        "fetched_data, validity",
-        [({"images": ["img.jpg"]}, True), ({"images": []}, False)],
-    )
-    def test_is_valid(self, mocker, fetched_data, validity):
-        pin_object = pin.Pin(mocker.Mock(), "url")
-        pin_object._fetched_data = fetched_data
-        mocker.patch.object(pin_object, "fetch_data", return_value=fetched_data)
-
-        pin_is_valid = pin_object.is_valid()
-
-        assert pin_is_valid is validity
