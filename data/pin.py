@@ -66,28 +66,63 @@ class PinData(IPin):
 
 
 class Pin(IPin):
-    _fetched_data: dict[str, str | list[str]]
-    _pin_data: PinData
+    def __init__(self, pin_data: PinData) -> None:
+        self._pin_data = pin_data
+        self._raw = {"custom": {}, "scraped": {}}
+        self._processed = {}
 
-    def __init__(self, get_request_manager: GetRequestManager, pin_url: str) -> None:
-        self.get_request_manager: GetRequestManager = get_request_manager
-        self._pin_url: str = pin_url
+    def fetch_data(self) -> dict:
+        if not self._processed:
+            self._raw = self._pin_data.fetch_data()
 
-    def get_pin_data(self) -> PinData:
-        if not hasattr(self, "_pin_data"):
-            self._pin_data = PinData(self.get_request_manager, self._pin_url)
-        return self._pin_data
+            self._processed = {
+                "id": self.id,
+                "url": self.url,
+                "title": self.title,
+                "description": self.description,
+                "hashtags": self.hashtags,
+                "dominant_color": self.dominant_color,
+                "images": self.images,
+            }
 
-    def fetch_data(self) -> dict[str, str | list[str]]:
-        self.get_pin_data()
-
-        if not hasattr(self, "_fetched_data"):
-            self._fetched_data = self._pin_data.fetch_data()
-        return self._fetched_data
+        return self._processed
 
     def is_valid(self) -> bool:
+        """Ensure there's images along with any text to identify them."""
         self.fetch_data()
 
-        if not self._fetched_data["images"]:
+        if not self.images:
             return False
+
+        if not self.title and not self.description and not self.hashtags:
+            return False
+
         return True
+
+    @property
+    def id(self) -> str:
+        return self._raw["custom"].get("id", "")
+
+    @property
+    def url(self) -> str:
+        return self._raw["custom"].get("url", "")
+
+    @property
+    def images(self) -> list[str]:
+        return self._raw["custom"].get("images", [])
+
+    @property
+    def title(self) -> str:
+        return self._raw["scraped"].get("title", "")
+
+    @property
+    def description(self) -> str:
+        return self._raw["scraped"].get("description", "")
+
+    @property
+    def hashtags(self) -> list[str]:
+        return self._raw["scraped"].get("hashtags", [])
+
+    @property
+    def dominant_color(self) -> str:
+        return self._raw["scraped"].get("dominant_color", "")
