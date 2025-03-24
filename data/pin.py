@@ -1,65 +1,68 @@
-from typing import Any
 from abc import ABC, abstractmethod
 import json
 
-import re
-
 from web.data_manager import GetRequestManager, make_html_soup
+import settings
 
 
 class IPin(ABC):
     @abstractmethod
-    def fetch_data(self) -> dict[str, list | str]:
+    def fetch_data(self) -> dict:
         pass
 
 
 class PinData(IPin):
-    def __init__(self, get_request_manager: GetRequestManager, pin_url: str) -> None:
+    def __init__(self, pin_id: str, get_request_manager: GetRequestManager) -> None:
         self.get_request_manager: GetRequestManager = get_request_manager
-        self._pin_url: str = pin_url
-        self._raw_pin_data: dict[str, Any] = self._fetch_raw_pin_data()
+        self._id = pin_id
+        self._url = self._make_url(pin_id)
 
-    def fetch_data(self) -> dict[str, str | list[str]]:
-        return {
-            "url": self._pin_url,
-            "title": self._get_title(),
-            "description": self._get_description(),
-            "hashtags": self._get_hashtags(),
-            "dominant_color": self._get_dominant_color(),
-            "images": self._get_images(),
-        }
+    def fetch_data(self) -> dict:
+        data = {"custom": {}, "scraped": {}}
 
-    def _fetch_raw_pin_data(self) -> dict[str, Any]:
-        pin_page_response = self.get_request_manager.get(self._pin_url)
+        data["custom"]["images"] = self._get_images(data["scraped"])
+        data["custom"]["url"] = self._url
+        data["custom"]["id"] = self._id
+
+        data["scraped"].update(self._fetch_data_root())
+
+        return data
+
+    @staticmethod
+    def _make_url(pin_id: str) -> str:
+        return settings.URLS["HOME"] + "/pin/" + pin_id
+
+    def _fetch_data_root(self) -> dict:
+        pin_page_response = self.get_request_manager.get(self._url)
         pin_page_html = self.get_request_manager.get_html(pin_page_response)
+
         pin_page_soup = make_html_soup(pin_page_html)
+
         script_tag_soup = pin_page_soup.find(
             "script", {"id": "__PWS_INITIAL_PROPS__", "type": "application/json"}
         )
+
+        if not script_tag_soup:
+            return {}
+
         script_tag_dict = json.loads(script_tag_soup.text)
-        pin_id = re.search(r"(\d+)/$", self._pin_url).group(1)  # type: ignore
-        return script_tag_dict["initialReduxState"]["pins"][pin_id]
 
-    def _get_title(self) -> str:
-        return self._raw_pin_data["title"]
+        try:
+            return script_tag_dict["initialReduxState"]["pins"][self._id]
+        except KeyError:
+            return {}
 
-    def _get_description(self) -> str:
-        return self._raw_pin_data["description"]
+    @staticmethod
+    def _get_images(data_root: dict) -> list[str]:
+        try:
+            if not "carousel_data" in data_root:
+                return [data_root["images"]["736x"]["url"]]
 
-    def _get_hashtags(self) -> list[str]:
-        return self._raw_pin_data["hashtags"]
-
-    def _get_dominant_color(self) -> str:
-        return self._raw_pin_data["dominant_color"]
-
-    def _get_images(self) -> list[str]:
-        if not self._raw_pin_data["carousel_data"]:
-            return [self._raw_pin_data["images"]["736x"]["url"]]
-
-        images_carousel = self._raw_pin_data["carousel_data"]["carousel_slots"]
-        return [
-            carousel_data["images"]["736x"]["url"] for carousel_data in images_carousel
-        ]
+            carousel = data_root["carousel_data"]["carousel_slots"]
+            images = [slot["images"]["736x"]["url"] for slot in carousel]
+            return images
+        except KeyError:
+            return []
 
 
 class Pin(IPin):
