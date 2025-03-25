@@ -115,11 +115,15 @@ class Pin(IPin):
 
     @property
     def title(self) -> str:
-        return self._raw["scraped"].get("title", "")
+        title = self._raw["scraped"].get("title", "")
+        alt_title = self._raw["scraped"].get("closeup_unified_title", "")
+        return title.strip() or alt_title.strip()
 
     @property
     def description(self) -> str:
-        return self._raw["scraped"].get("description", "")
+        description = self._raw["scraped"].get("description", "")
+        alt_description = self._raw["scraped"].get("closeup_unified_description", "")
+        return description.strip() or alt_description.strip()
 
     @property
     def hashtags(self) -> list[str]:
