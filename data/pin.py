@@ -82,6 +82,7 @@ class Pin(IPin):
                 "description": self.description,
                 "hashtags": self.hashtags,
                 "dominant_color": self.dominant_color,
+                "hashtags": self.hashtags,
                 "images": self.images,
             }
 
