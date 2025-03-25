@@ -128,40 +128,44 @@ class TestPin:
 
 @pytest.mark.web
 def test_pin_single_image_source(mocker, cookies):
-    pin_url = "https://www.pinterest.com/pin/581105158183245043/"
+    pin_id = "581105158183245043"
+    url = "https://www.pinterest.com/pin/581105158183245043"
+
     expected_pin_data = {
-        "url": pin_url,
+        "id": pin_id,
+        "url": url,
         "title": "Shanks",
-        "description": " ",
+        "description": "one piece icons | shanks icons | manga icons | manga pfp",
         "dominant_color": "#fdfdfd",
         "hashtags": [],
         "images": [
-            "https://i.pinimg.com/736x/68/92/17/" "689217658bbff324dfba0621ce9449fa.jpg"
+            "https://i.pinimg.com/originals/68/92/17/689217658bbff324dfba0621ce9449fa.jpg"
         ],
     }
+
     driver = mocker.Mock(get_cookies=lambda: cookies)
 
     get_request_manager = GetRequestManager(driver)
-    pin_data = pin.PinData(get_request_manager, pin_url)
-    fetched_data = pin_data.fetch_data()
+    pin_data = PinData(pin_id, get_request_manager)
+    pin = Pin(pin_data)
 
-    assert fetched_data == expected_pin_data
+    assert pin.fetch_data() == expected_pin_data
 
 
 @pytest.mark.web
-def test_pin_multiple_images_source(mocker, cookies):
-    pin_url = "https://www.pinterest.com/pin/10485011624488809/"
+def test_pin_multiple_image_sources(mocker, cookies):
+    pin_id = "21110691997921349"
+    url = "https://www.pinterest.com/pin/21110691997921349"
     expected_pin_data = {
-        "url": pin_url,
-        "title": "Luffy & Zoro Matching Icon",
-        "description": "One Piece",
-        "dominant_color": "#6e6e90",
-        "hashtags": [],
+        "id": pin_id,
+        "url": url,
+        "title": "luffy & zoro",
+        "description": "luffy & zoro matching pfp\n#luffy #zoro #onepiece #matching #pfp",
+        "dominant_color": "#4e5b9c",
+        "hashtags": ["#luffy", "#zoro", "#onepiece", "#matching", "#pfp"],
         "images": [
-            "https://i.pinimg.com/736x/ed/02/90/"
-            "ed029092be09633a085854675461cbd1.jpg",
-            "https://i.pinimg.com/736x/e3/0f/4b/"
-            "e30f4b0e9cf0d1d84bdd0fb382238cb9.jpg",
+            "https://i.pinimg.com/736x/00/2d/e4/002de452d9a69ff2220914691308279e.jpg",
+            "https://i.pinimg.com/736x/ea/c3/46/eac3462d1eb9359b05a0c55619139cbb.jpg",
         ],
     }
 
@@ -169,6 +173,6 @@ def test_pin_multiple_images_source(mocker, cookies):
 
     get_request_manager = GetRequestManager(driver)
     pin_data = pin.PinData(get_request_manager, pin_url)
-    fetched_data = pin_data.fetch_data()
+    pin = Pin(pin_data)
 
-    assert fetched_data == expected_pin_data
+    assert pin.fetch_data() == expected_pin_data
