@@ -20,6 +20,8 @@ class PinData(IPin):
     def fetch_data(self) -> dict:
         data = {"custom": {}, "scraped": {}}
 
+        data["scraped"].update(self._fetch_data_root())
+
         data["custom"]["images"] = self._get_images(data["scraped"])
         data["custom"]["url"] = self._url
         data["custom"]["id"] = self._id
