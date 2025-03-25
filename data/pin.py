@@ -25,9 +25,6 @@ class PinData(IPin):
         data["custom"]["images"] = self._get_images(data["scraped"])
         data["custom"]["url"] = self._url
         data["custom"]["id"] = self._id
-
-        data["scraped"].update(self._fetch_data_root())
-
         return data
 
     @staticmethod
@@ -81,7 +78,6 @@ class Pin(IPin):
                 "url": self.url,
                 "title": self.title,
                 "description": self.description,
-                "hashtags": self.hashtags,
                 "dominant_color": self.dominant_color,
                 "hashtags": self.hashtags,
                 "images": self.images,
