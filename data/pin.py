@@ -57,9 +57,8 @@ class PinData(IPin):
     @staticmethod
     def _get_images(data_root: dict) -> list[str]:
         try:
-            if not "carousel_data" in data_root:
-                return [data_root["images"]["736x"]["url"]]
-
+            if data_root.get("carousel_data") is None:
+                return [data_root["images"]["orig"]["url"]]
             carousel = data_root["carousel_data"]["carousel_slots"]
             images = [slot["images"]["736x"]["url"] for slot in carousel]
             return images
