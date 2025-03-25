@@ -1,4 +1,3 @@
-import json
 import time
 
 import pytest
@@ -29,10 +28,16 @@ def pin_data():
 def cookies():
     browser = Firefox(binary="geckodriver", headless=True)
     browser.setup_driver()
+    pinterest = Pinterest(browser.driver)
 
     browser.get(settings.URLS["LOGIN"])
-    Pinterest(browser.driver).perform_login()
-    time.sleep(3)
+    time.sleep(2)
+
+    pinterest.close_google_login()
+    time.sleep(1)
+
+    pinterest.perform_login()
+    time.sleep(4)
 
     cookies = browser.driver.get_cookies()
     browser.quit()
