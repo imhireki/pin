@@ -14,6 +14,8 @@ from selenium.webdriver import (
     ChromeOptions,
 )
 
+import settings
+
 
 class IBrowser[Opts: ArgOptions](ABC):
     _default_options: dict[str, Any] = {"headless": True, "wait_timeout": 10}
@@ -51,12 +53,16 @@ class IBrowser[Opts: ArgOptions](ABC):
     def _set_driver(self, driver_options: Opts) -> WebDriver:
         pass
 
-    def scroll_to_page_bottom(self, times=1, timeout=3) -> None:
+    def scroll_down(self, times=1, delay=3) -> None:
+        self._wait.until(
+            EC.visibility_of_element_located(settings.ELEMENTS["PINS"])
+        )
+
         for _ in range(times):
             self._driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);"
             )
-            time.sleep(timeout)
+            time.sleep(delay)
 
     def get_cookie(self, name: str) -> dict:
         return self._driver.get_cookie(name) or {}
