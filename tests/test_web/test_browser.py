@@ -29,6 +29,24 @@ def test_browser_get(mocker):
     assert chromium._driver.get.call_args.args[0] == "url"
 
 
+def test_browser_shortcuts(mocker):
+    firefox = browser.Firefox()
+    driver = mocker.Mock()
+    firefox._driver = driver
+
+    cookie = firefox.get_cookie("cookie")
+    cookies = firefox.get_cookies()
+    firefox.switch_to_default_content()
+    firefox.get("url")
+    firefox.quit()
+
+    assert cookie == driver.get_cookie.return_value
+    assert cookies == driver.get_cookies.return_value
+    driver.switch_to.default_content.assert_called()
+    driver.get.assert_called_with("url")
+    driver.quit.assert_called()
+
+
 @pytest.mark.parametrize("options", [{"wait_timeout": 12}, {"wait_timeout": 10}])
 def test_browser_set_wait_options(mocker, options):
     mocker.patch("web.browser.ChromeDriver")
