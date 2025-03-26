@@ -3,6 +3,8 @@ from typing import Any
 import time
 import os
 
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.options import ArgOptions
 from selenium.webdriver import (
@@ -14,24 +16,36 @@ from selenium.webdriver import (
 
 
 class IBrowser[Opts: ArgOptions](ABC):
-    _default_options: dict[str, Any] = {"headless": True}
+    _default_options: dict[str, Any] = {"headless": True, "wait_timeout": 10}
     _driver: WebDriver
+    _wait: WebDriverWait
     _options: dict[str, Any]
 
     def setup_driver(self) -> None:
-        setup_driver_options = {**self._default_options}
-        setup_driver_options.update(**self._options)
+        options = {**self._default_options}
+        options.update(**self._options)
 
-        driver_options = self._set_driver_options(setup_driver_options)
+        driver_options = self._set_driver_options(options)
+        wait_options = self._set_wait_options(options)
+
         self._driver = self._set_driver(driver_options)
+        self._wait = WebDriverWait(self._driver, **wait_options)
 
     @property
     def driver(self) -> WebDriver:
         return self._driver
 
+    @property
+    def wait(self) -> WebDriverWait:
+        return self._wait
+
     @abstractmethod
     def _set_driver_options(self, options: dict[str, Any]) -> Opts:
         pass
+
+    @staticmethod
+    def _set_wait_options(options: dict) -> dict:
+        return {"timeout": options["wait_timeout"]}
 
     @abstractmethod
     def _set_driver(self, driver_options: Opts) -> WebDriver:
