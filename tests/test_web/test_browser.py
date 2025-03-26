@@ -29,80 +29,82 @@ def test_browser_get(mocker):
     assert chromium._driver.get.call_args.args[0] == "url"
 
 
-def test_browser_refresh(mocker):
+@pytest.mark.parametrize("options", [{"wait_timeout": 12}, {"wait_timeout": 10}])
+def test_browser_set_wait_options(mocker, options):
+    mocker.patch("web.browser.ChromeDriver")
     chromium = browser.Chromium()
-    chromium._driver = mocker.Mock()
 
-    chromium.refresh()
-
-    assert chromium._driver.refresh.called
+    assert chromium._set_wait_options(options) == {"timeout": options["wait_timeout"]}
 
 
-def test_browser_quit(mocker):
-    chromium = browser.Chromium()
-    chromium._driver = mocker.Mock()
+@pytest.mark.parametrize("options", [{}, {"headless": False}])
+def test_browser_setup_driver(mocker, options):
+    wait = mocker.patch("web.browser.WebDriverWait")
 
-    chromium.quit()
+    chromium = browser.Chromium(**options)
+    set_driver = mocker.patch.object(chromium, "_set_driver")
+    set_driver_options = mocker.patch.object(chromium, "_set_driver_options")
+    set_wait_options = mocker.patch.object(chromium, "_set_wait_options")
 
-    assert chromium._driver.quit.called
+    chromium.setup_driver()
+
+    processed_opts = {"headless": True, "wait_timeout": 10}
+    processed_opts.update(options)
+    set_driver_options.assert_called_with(processed_opts)
+    set_wait_options.assert_called_with(processed_opts)
+
+    set_driver.assert_called_with(set_driver_options.return_value)
+    wait.assert_called_with(set_driver.return_value, **set_wait_options.return_value)
+
+    assert chromium._driver and chromium._wait
 
 
 class TestChromium:
-    def test_driver(self, mocker):
-        driver = mocker.patch("web.browser.ChromeDriver")
-        options = mocker.patch("web.browser.ChromeOptions")
-
-        chromium = browser.Chromium()
-        chromium.setup_driver()
-        chromium.quit()
-
-        assert chromium.driver == driver.return_value
-        assert driver.call_args.kwargs["options"] == options.return_value
-        assert driver.return_value.quit.called
-
-    @pytest.mark.parametrize("raw_options", [{"headless": True}, {"headless": False}])
-    def test_setup_driver(self, mocker, raw_options):
-        driver = mocker.patch("web.browser.ChromeDriver").return_value
+    @pytest.mark.parametrize("headless", [True, False])
+    def test_set_driver_options(self, mocker, headless):
+        mocker.patch("web.browser.ChromeDriver")
         options = mocker.patch("web.browser.ChromeOptions").return_value
 
-        chromium = browser.Chromium(**raw_options)
-        chromium.setup_driver()
+        chromium = browser.Chromium()
 
-        assert chromium.driver is driver
-
-        if raw_options["headless"]:
+        assert options == chromium._set_driver_options(dict(headless=headless))
+        if headless:
             options.add_argument.assert_any_call("--headless=new")
-
         options.add_experimental_option.assert_called_with("detach", True)
-
         options.add_argument.assert_any_call(
             "--user-data-dir=" + chromium._driver_data_directory
         )
 
+    def test_set_driver(self, mocker):
+        driver = mocker.patch("web.browser.ChromeDriver")
+        options = mocker.Mock()
+
+        chromium = browser.Chromium()
+        chromium_driver = chromium._set_driver(options)
+
+        driver.assert_called_with(options=options)
+        assert chromium_driver is driver.return_value
+
 
 class TestFirefox:
-    def test_driver(self, mocker):
-        driver = mocker.patch("web.browser.FirefoxDriver")
-        options = mocker.patch("web.browser.FirefoxOptions")
-
-        firefox = browser.Firefox()
-        firefox.setup_driver()
-        firefox.quit()
-
-        assert firefox.driver == driver.return_value
-        assert driver.call_args.kwargs["options"] == options.return_value
-        assert driver.return_value.quit.called
-
-    @pytest.mark.parametrize("raw_options", [{"headless": True}, {"headless": False}])
-    def test_setup_driver(self, mocker, raw_options):
+    @pytest.mark.parametrize("headless", [True, False])
+    def test_set_driver_options(self, mocker, headless):
+        mocker.patch("web.browser.FirefoxDriver")
         options = mocker.patch("web.browser.FirefoxOptions").return_value
-        driver = mocker.patch("web.browser.FirefoxDriver").return_value
 
-        firefox = browser.Firefox(**raw_options)
-        firefox.setup_driver()
-
-        assert firefox.driver is driver
-
-        if raw_options["headless"]:
+        firefox = browser.Firefox(headless=headless)
+        driver_options = firefox._set_driver_options(dict(headless=headless))
+        assert driver_options == options
+        if headless:
             options.add_argument.assert_any_call("-headless")
         assert options.profile == firefox._driver_data_directory
+
+    def test_set_driver(self, mocker):
+        driver = mocker.patch("web.browser.FirefoxDriver")
+        options = mocker.Mock()
+
+        firefox = browser.Firefox()
+        firefox_driver = firefox._set_driver(options)
+
+        driver.assert_called_with(options=options)
+        assert firefox_driver is driver.return_value
