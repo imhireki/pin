@@ -58,11 +58,17 @@ class IBrowser[Opts: ArgOptions](ABC):
             )
             time.sleep(timeout)
 
+    def get_cookie(self, name: str) -> dict:
+        return self._driver.get_cookie(name) or {}
+
+    def get_cookies(self) -> list[dict]:
+        return self._driver.get_cookies()
+
+    def switch_to_default_content(self) -> None:
+        self._driver.switch_to.default_content()
+
     def get(self, url: str) -> None:
         self._driver.get(url)
-
-    def refresh(self) -> None:
-        self._driver.refresh()
 
     def quit(self) -> None:
         self._driver.quit()
