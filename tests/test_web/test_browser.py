@@ -3,30 +3,25 @@ import pytest
 from web import browser
 
 
-def test_browser_scroll_to_page_bottom(mocker):
-    time_sleep_mock = mocker.patch("time.sleep")
-    scroll_times = 2
-    scroll_timeout = 3
-    chromium = browser.Chromium()
-    chromium._driver = mocker.Mock()
+def test_browser_scroll_down(mocker):
+    sleep = mocker.patch("time.sleep")
+    driver = mocker.Mock()
+    wait = mocker.Mock()
 
-    chromium.scroll_to_page_bottom(times=scroll_times, timeout=scroll_timeout)
+    scroll_times, scroll_delay = 2, 1
 
-    assert (
-        chromium._driver.execute_script.call_args.args[0]
-        == "window.scrollTo(0, document.body.scrollHeight);"
+    firefox = browser.Firefox()
+    firefox._driver = driver
+    firefox._wait = wait
+
+    firefox.scroll_down(times=scroll_times, delay=scroll_delay)
+
+    wait.until.assert_called()
+    driver.execute_script.assert_any_call(
+        "window.scrollTo(0, document.body.scrollHeight);"
     )
-    assert chromium._driver.execute_script.call_count == scroll_times
-    assert time_sleep_mock.call_args.args[0] == scroll_timeout
-
-
-def test_browser_get(mocker):
-    chromium = browser.Chromium()
-    chromium._driver = mocker.Mock()
-
-    chromium.get("url")
-
-    assert chromium._driver.get.call_args.args[0] == "url"
+    assert driver.execute_script.call_count == scroll_times
+    sleep.assert_called_with(scroll_delay)
 
 
 def test_browser_shortcuts(mocker):
