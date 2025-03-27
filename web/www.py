@@ -37,6 +37,18 @@ class Pinterest:
 
         self.browser.switch_to_default_content()
 
+    def authenticate_session(self, retries: int, retry_delay: int) -> None:
+        for _ in range(retries):
+            auth_cookie = self.browser.get_cookie("_auth")
+
+            if auth_cookie and auth_cookie["value"] == "1":
+                for cookie in self.browser.get_cookies():
+                    self.session.cookies.set(cookie["name"], cookie["value"])
+                return
+            time.sleep(retry_delay)
+
+        raise Exception("Failed to authenticate Session")
+
     def perform_login(self) -> None:
         try:
             email_input = self._web_element_manager.get(
