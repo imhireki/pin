@@ -1,7 +1,10 @@
 import pytest
 
-from web import www
+from web.www import Pinterest
 import settings
+
+
+EC = "selenium.webdriver.support.expected_conditions"
 
 
 class TestPinterest:
@@ -13,80 +16,107 @@ class TestPinterest:
         ],
     )
     def test_make_search_url(self, mocker, query, search_url):
-        pinterest = www.Pinterest(mocker.Mock())
+        pinterest = Pinterest(mocker.Mock())
         url = pinterest.make_search_url(query)
 
         assert url == search_url
 
     def test_close_google_login(self, mocker):
-        web_element_manager = mocker.patch("web.www.WebElementManager").return_value
-        driver = mocker.Mock()
+        frame_to_be_available = mocker.patch(
+            EC + ".frame_to_be_available_and_switch_to_it"
+        )
+        element_to_be_clickable = mocker.patch(EC + ".element_to_be_clickable")
 
-        pinterest = www.Pinterest(driver)
+        browser = mocker.Mock()
+        pinterest = Pinterest(browser)
         pinterest.close_google_login()
 
-        web_element_manager.get.assert_any_call(
-            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
+        assert browser.wait.until.call_count == 2
+        frame_to_be_available.assert_called_with(settings.ELEMENTS["GOOGLE_LOGIN"])
+        element_to_be_clickable.assert_called_with(
+            settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"]
         )
-        driver.switch_to.frame.assert_called()
-        web_element_manager.get.assert_any_call(
-            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
-        )
-        web_element_manager.get.return_value.click.assert_called()
-        driver.switch_to.default_content.assert_called()
+        browser.wait.until().click.assert_called()
+        browser.switch_to_default_content.assert_called()
+
+    @pytest.mark.parametrize(
+        "cookies",
+        [
+            [],
+            [{"name": "_auth", "value": "0"}],
+            [{"name": "_auth", "value": "1"}],
+        ],
+    )
+    def test_authenticate_session(self, mocker, cookies):
+        sleep = mocker.patch("time.sleep")
+        auth_cookie = cookies[0] if cookies else {}
+
+        browser = mocker.Mock()
+        browser.get_cookie.return_value = None if not cookies else auth_cookie
+        browser.get_cookies.return_value = cookies
+
+        pinterest = Pinterest(browser)
+        pinterest.session = mocker.Mock()
+
+        if auth_cookie and auth_cookie["value"] == "1":
+            pinterest.authenticate_session(1, 0)
+            pinterest.session.cookies.set.assert_called()
+            sleep.assert_not_called()
 
     def test_perform_login(self, mocker):
-        web_element_manager_mock = mocker.patch(
-            "web.www.WebElementManager"
-        ).return_value
+        element_to_be_clickable = mocker.patch(EC + ".element_to_be_clickable")
 
-        pinterest = www.Pinterest(mocker.Mock())
+        browser = mocker.Mock()
+        pinterest = Pinterest(browser)
+        auth_session = mocker.patch.object(pinterest, "authenticate_session")
         pinterest.perform_login()
 
-        assert (
-            web_element_manager_mock.mock_calls[0].args[0]
-            == settings.ELEMENTS["EMAIL_INPUT"]["element"]
-        )
-        assert (
-            web_element_manager_mock.mock_calls[1].args[0]
-            == settings.CREDENTIALS["EMAIL"]
-        )
-        assert (
-            web_element_manager_mock.mock_calls[2].args[0]
-            == settings.ELEMENTS["PASSWORD_INPUT"]["element"]
-        )
-        assert (
-            web_element_manager_mock.mock_calls[3].args[0]
-            == settings.CREDENTIALS["PASSWORD"]
+        assert browser.wait.until.call_count == 2
+
+        element_to_be_clickable.assert_any_call(settings.ELEMENTS["EMAIL_FIELD"])
+        browser.wait.until().send_keys.assert_any_call(settings.CREDENTIALS["EMAIL"])
+
+        element_to_be_clickable.assert_any_call(settings.ELEMENTS["PASSWORD_FIELD"])
+        browser.wait.until().send_keys.assert_any_call(
+            settings.CREDENTIALS["PASSWORD"], "\ue007"
         )
 
-    @pytest.mark.parametrize("html,ids", [
-        ["", []],
-        ["<html></html>", []],
+        auth_session.assert_called_with(10, 1)
+
+    @pytest.mark.parametrize(
+        "html,ids",
         [
-            "<html> <a href='/pin/123/'>link1</a> <a href='/invalid/'>link2</a> </html>",
-            ["123"]
-         ],
-    ])
+            ["", set()],
+            ["<html></html>", set()],
+            [
+                "<html><a href='/pin/123/'>link1</a><a href='/hmmm/'>link2</a></html>",
+                {"123"},
+            ],
+        ],
+    )
     def test_find_pin_ids(self, mocker, html, ids):
-        web_element_manager = mocker.patch("web.www.WebElementManager").return_value
-        web_element_manager.get_html.return_value = html
+        visibility_of_element_located = mocker.patch(
+            EC + ".visibility_of_element_located"
+        )
+        browser = mocker.Mock()
+        browser.wait.until.return_value.get_attribute.return_value = html
 
-        pinterest = www.Pinterest(mocker.Mock())
-        pins_urls = pinterest.find_pin_ids()
+        pinterest = Pinterest(browser)
+        pids = pinterest.find_pin_ids()
 
-        assert pins_urls == ids
+        visibility_of_element_located.assert_called_with(settings.ELEMENTS["PINS"])
+        assert pids == ids
 
     @pytest.mark.parametrize(
         "validity, data", [(True, {"title": "title"}), (False, {})]
     )
     def test_fetch_pin_data(self, mocker, validity, data):
-        pin_mock = mocker.patch("web.www.Pin")
-        pin_mock.return_value = mocker.Mock(
-            is_valid=lambda: validity, fetch_data=lambda: data
-        )
+        pin = mocker.patch("web.www.Pin").return_value
+        pin.is_valid.return_value = validity
+        pin.fetch_data.return_value = data
+        mocker.patch("web.www.PinData")
 
-        pinterest = www.Pinterest(mocker.Mock())
-        fetched_pin_data = pinterest.fetch_pin_data("https://pinterest.com/pin/123/")
+        pinterest = Pinterest(mocker.Mock())
+        result = pinterest.fetch_pin_data("123")
 
-        assert fetched_pin_data == data
+        assert result == data
