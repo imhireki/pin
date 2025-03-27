@@ -17,14 +17,12 @@ class Pinterest:
         self.browser = browser
         self.session = Session()
 
-    def make_search_url(self, query: str) -> str:
+    @staticmethod
+    def make_search_url(query: str) -> str:
         search_url = settings.URLS["SEARCH_PIN"]
 
         for index, word in enumerate(query.split(" ")):
-            if index != 0:
-                search_url += f"+{word}"
-            else:
-                search_url += word
+            search_url += word if index == 0 else "+" + word
         return search_url
 
     def close_google_login(self) -> None:
@@ -62,7 +60,8 @@ class Pinterest:
 
         return make_html_soup(pins_html).find_all("a")
 
-    def _extract_pin_id(self, tag: _QueryResults) -> str:
+    @staticmethod
+    def _extract_pin_id(tag: _QueryResults) -> str:
         if not isinstance(tag, Tag):
             raise TypeError(
                 f"Expected an instance of Tag, but got {tag} {type(tag).__name__}"
