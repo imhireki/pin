@@ -26,18 +26,16 @@ class Pinterest:
         return search_url
 
     def close_google_login(self) -> None:
-        iframe = self._web_element_manager.get(
-            settings.ELEMENTS["GOOGLE_LOGIN"]["element"]
+        self.browser.wait.until(
+            EC.frame_to_be_available_and_switch_to_it(settings.ELEMENTS["GOOGLE_LOGIN"])
         )
-        self._driver.switch_to.frame(iframe)
 
-        close_button = self._web_element_manager.get(
-            settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"]["element"],
-            settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"]["locator"],
+        close_button = self.browser.wait.until(
+            EC.element_to_be_clickable(settings.ELEMENTS["GOOGLE_LOGIN_CLOSE_BUTTON"])
         )
         close_button.click()
 
-        self._driver.switch_to.default_content()
+        self.browser.switch_to_default_content()
 
     def perform_login(self) -> None:
         try:
