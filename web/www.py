@@ -1,23 +1,21 @@
-from typing import Any
+import time
 import re
 
-from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from bs4 import Tag
 from bs4._typing import _QueryResults
+from bs4 import BeautifulSoup, Tag
+from requests import Session
 
-from web.data_manager import GetRequestManager, WebElementManager, make_html_soup
-from web.browser import WebDriver
-from data.pin import Pin
+from data.pin import Pin, PinData
+from web.browser import IBrowser
 import settings
 
 
-
 class Pinterest:
-    def __init__(self, web_driver: WebDriver) -> None:
-        self._web_element_manager: WebElementManager = WebElementManager(web_driver)
-        self._get_request_manager: GetRequestManager = GetRequestManager(web_driver)
-        self._driver = web_driver
+    def __init__(self, browser: IBrowser) -> None:
+        self.browser = browser
+        self.session = Session()
 
     def make_search_url(self, query: str) -> str:
         search_url = settings.URLS["SEARCH_PIN"]
