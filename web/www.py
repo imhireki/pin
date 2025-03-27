@@ -65,13 +65,15 @@ class Pinterest:
         self.authenticate_session(10, 1)
 
     def _find_a_tags(self) -> list:
-        pins_element = self._web_element_manager.get(**settings.ELEMENTS["PINS"])
-        pins_html = self._web_element_manager.get_html(pins_element)
+        pins_element = self.browser.wait.until(
+            EC.visibility_of_element_located(settings.ELEMENTS["PINS"])
+        )
+        pins_html = pins_element.get_attribute("outerHTML")
 
         if not pins_html:
             return []
 
-        return make_html_soup(pins_html).find_all("a")
+        return BeautifulSoup(pins_html, "html.parser").find_all("a")
 
     @staticmethod
     def _extract_pin_id(tag: _QueryResults) -> str:
