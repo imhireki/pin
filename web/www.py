@@ -50,16 +50,19 @@ class Pinterest:
         raise Exception("Failed to authenticate Session")
 
     def perform_login(self) -> None:
-        try:
-            email_input = self._web_element_manager.get(
-                settings.ELEMENTS["EMAIL_INPUT"]["element"]
-            ).send_keys(settings.CREDENTIALS["EMAIL"])
+        email_field = self.browser.wait.until(
+            EC.element_to_be_clickable(settings.ELEMENTS["EMAIL_FIELD"])
+        )
 
-            password_input = self._web_element_manager.get(
-                settings.ELEMENTS["PASSWORD_INPUT"]["element"]
-            ).send_keys(settings.CREDENTIALS["PASSWORD"], Keys.ENTER)
-        except TimeoutException:
-            return
+        email_field.send_keys(settings.CREDENTIALS["EMAIL"])
+
+        password_field = self.browser.wait.until(
+            EC.element_to_be_clickable(settings.ELEMENTS["PASSWORD_FIELD"])
+        )
+
+        password_field.send_keys(settings.CREDENTIALS["PASSWORD"], Keys.ENTER)
+
+        self.authenticate_session(10, 1)
 
     def _find_a_tags(self) -> list:
         pins_element = self._web_element_manager.get(**settings.ELEMENTS["PINS"])
