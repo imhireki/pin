@@ -94,11 +94,11 @@ class Pinterest:
 
         return pin_id_match.group(1)
 
-    def find_pin_ids(self) -> list[str]:
-        urls = []
+    def find_pin_ids(self) -> set[str]:
+        urls = set()
         for tag in self._find_a_tags():
             try:
-                urls.append(self._extract_pin_id(tag))
+                urls.add(self._extract_pin_id(tag))
             except (TypeError, ValueError):
                 continue
         return urls
