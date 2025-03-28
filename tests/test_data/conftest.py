@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from web.browser import Firefox
@@ -25,20 +23,15 @@ def pin_data():
 
 
 @pytest.fixture(scope="session")
-def cookies():
+def pinterest_session():
     browser = Firefox(binary="geckodriver", headless=True)
     browser.setup_driver()
-    pinterest = Pinterest(browser.driver)
 
+    pinterest = Pinterest(browser)
     browser.get(settings.URLS["LOGIN"])
-    time.sleep(2)
-
     pinterest.close_google_login()
-    time.sleep(1)
-
     pinterest.perform_login()
-    time.sleep(4)
 
-    cookies = browser.driver.get_cookies()
+    session = pinterest.session
     browser.quit()
-    return cookies
+    return session
