@@ -2,9 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from web.data_manager import GetRequestManager
 from data.pin import Pin, PinData
-from data import pin
 
 
 class TestPinData:
@@ -51,10 +49,10 @@ class TestPinData:
         ],
     )
     def test_fetch_data_root(self, mocker, html, result):
-        get_request_manager = mocker.patch("data.pin.GetRequestManager")
-        get_request_manager.get_html = lambda _: html
+        session = mocker.Mock().return_value
+        session.get.return_value.text = html
 
-        pin_data = PinData("123", get_request_manager)
+        pin_data = PinData("123", session)
         data_root = pin_data._fetch_data_root()
 
         assert data_root == result
@@ -75,7 +73,7 @@ class TestPinData:
                 },
                 ["carousel1.jpg", "carousel2.jpg"],
             ),
-            ({"images": {"736x": {"url": "img.jpg"}}}, ["img.jpg"]),
+            ({"images": {"orig": {"url": "img.jpg"}}}, ["img.jpg"]),
         ],
     )
     def test_get_images(self, mocker, root, result):
@@ -106,16 +104,21 @@ class TestPin:
 
         pin_data.fetch_data.assert_called()
         assert pin._raw == raw_data
-        assert processed == dict(**clean_raw_data["custom"], **clean_raw_data["scraped"])
+        assert processed == dict(
+            **clean_raw_data["custom"], **clean_raw_data["scraped"]
+        )
         assert pin._processed == processed
 
-    @pytest.mark.parametrize("data,is_valid", [
-        ({"images": []}, False),
-        ({"images": ["img1"]}, False),
-        ({"images": ["img1"], "title": "title"}, True),
-        ({"images": ["img1"], "description": "desc"}, True),
-        ({"images": ["img1"], "hashtags": ["#hash"]}, True),
-    ])
+    @pytest.mark.parametrize(
+        "data,is_valid",
+        [
+            ({"images": []}, False),
+            ({"images": ["img1"]}, False),
+            ({"images": ["img1"], "title": "title"}, True),
+            ({"images": ["img1"], "description": "desc"}, True),
+            ({"images": ["img1"], "hashtags": ["#hash"]}, True),
+        ],
+    )
     def test_is_valid(self, mocker, data, is_valid):
         pin = Pin(mocker.Mock())
         pin._processed = {"x": "y"}
@@ -127,7 +130,7 @@ class TestPin:
 
 
 @pytest.mark.web
-def test_pin_single_image_source(mocker, cookies):
+def test_pin_single_image_source(pinterest_session):
     pin_id = "581105158183245043"
     url = "https://www.pinterest.com/pin/581105158183245043"
 
@@ -143,17 +146,14 @@ def test_pin_single_image_source(mocker, cookies):
         ],
     }
 
-    driver = mocker.Mock(get_cookies=lambda: cookies)
-
-    get_request_manager = GetRequestManager(driver)
-    pin_data = PinData(pin_id, get_request_manager)
+    pin_data = PinData(pin_id, pinterest_session)
     pin = Pin(pin_data)
 
     assert pin.fetch_data() == expected_pin_data
 
 
 @pytest.mark.web
-def test_pin_multiple_image_sources(mocker, cookies):
+def test_pin_multiple_image_sources(pinterest_session):
     pin_id = "21110691997921349"
     url = "https://www.pinterest.com/pin/21110691997921349"
     expected_pin_data = {
@@ -169,10 +169,7 @@ def test_pin_multiple_image_sources(mocker, cookies):
         ],
     }
 
-    driver = mocker.Mock(get_cookies=lambda: cookies)
-
-    get_request_manager = GetRequestManager(driver)
-    pin_data = pin.PinData(get_request_manager, pin_url)
+    pin_data = PinData(pin_id, pinterest_session)
     pin = Pin(pin_data)
 
     assert pin.fetch_data() == expected_pin_data
