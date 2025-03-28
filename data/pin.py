@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 import json
 
-from web.data_manager import GetRequestManager, make_html_soup
+from bs4 import BeautifulSoup
+from requests import Session
+
 import settings
 
 
@@ -12,9 +14,9 @@ class IPin(ABC):
 
 
 class PinData(IPin):
-    def __init__(self, pin_id: str, get_request_manager: GetRequestManager) -> None:
-        self.get_request_manager: GetRequestManager = get_request_manager
+    def __init__(self, pin_id: str, session: Session) -> None:
         self._id = pin_id
+        self._session = session
         self._url = self._make_url(pin_id)
 
     def fetch_data(self) -> dict:
@@ -32,12 +34,10 @@ class PinData(IPin):
         return settings.URLS["HOME"] + "/pin/" + pin_id
 
     def _fetch_data_root(self) -> dict:
-        pin_page_response = self.get_request_manager.get(self._url)
-        pin_page_html = self.get_request_manager.get_html(pin_page_response)
+        pin_html = self._session.get(self._url).text
+        pin_soup = BeautifulSoup(pin_html, "html.parser")
 
-        pin_page_soup = make_html_soup(pin_page_html)
-
-        script_tag_soup = pin_page_soup.find(
+        script_tag_soup = pin_soup.find(
             "script", {"id": "__PWS_INITIAL_PROPS__", "type": "application/json"}
         )
 
