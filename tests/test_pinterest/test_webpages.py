@@ -1,6 +1,6 @@
 import pytest
 
-from web.www import Pinterest
+from pinterest.webpages import Pinterest
 import settings
 
 
@@ -111,10 +111,10 @@ class TestPinterest:
         "validity, data", [(True, {"title": "title"}), (False, {})]
     )
     def test_fetch_pin_data(self, mocker, validity, data):
-        pin = mocker.patch("web.www.Pin").return_value
+        pin = mocker.patch("pinterest.webpages.Pin").return_value
         pin.is_valid.return_value = validity
         pin.fetch_data.return_value = data
-        mocker.patch("web.www.PinData")
+        mocker.patch("pinterest.webpages.PinData")
 
         pinterest = Pinterest(mocker.Mock())
         result = pinterest.fetch_pin_data("123")

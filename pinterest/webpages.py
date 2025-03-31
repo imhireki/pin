@@ -7,8 +7,8 @@ from bs4._typing import _QueryResults
 from bs4 import BeautifulSoup, Tag
 from requests import Session
 
-from data.pin import Pin, PinData
-from web.browser import IBrowser
+from pinterest.pin import Pin, PinData
+from browser import IBrowser
 import settings
 
 
@@ -103,8 +103,9 @@ class Pinterest:
                 continue
         return urls
 
-    def fetch_pin_data(self, pin_url: str) -> dict[str, Any]:
-        pin = Pin(self._get_request_manager, pin_url)
+    def fetch_pin_data(self, pin_id: str) -> dict:
+        pin_data = PinData(pin_id, self.session)
+        pin = Pin(pin_data)
 
         if not pin.is_valid():
             return {}
