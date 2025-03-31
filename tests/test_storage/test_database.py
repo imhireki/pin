@@ -1,4 +1,4 @@
-from data.storage import database
+from storage import database
 
 
 def test_postgresql_connection(mocker):
@@ -35,7 +35,7 @@ def test_mysql_connection(mocker):
 
 def test_postgre_sql_storage(mocker):
     base_connection_options = {"user": "user", "password": 123}
-    connection_mock = mocker.patch("data.storage.database.PostgreSQLConnection")
+    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
 
     postgresql_storage = database.PostgreSQLStorage(
         database="db", **base_connection_options
@@ -56,7 +56,7 @@ def test_mysql_storage(mocker):
         "user": "u",
         "password": "pass",
     }
-    connection_mock = mocker.patch("data.storage.database.MySQLConnection")
+    connection_mock = mocker.patch("storage.database.MySQLConnection")
 
     mysql_storage = database.MySQLStorage(**connection_options)
 
@@ -65,7 +65,7 @@ def test_mysql_storage(mocker):
 
 
 def test_sql_storage_query_pin(mocker):
-    connection_mock = mocker.patch("data.storage.database.PostgreSQLConnection")
+    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
     stored_pin = "https://www.pinterest.com/pin/123/"
 
     storage = database.PostgreSQLStorage("db", "user", "pass")
@@ -78,7 +78,7 @@ def test_sql_storage_query_pin(mocker):
 
 
 def test_sql_storage_insert_pin(mocker, pin_data):
-    connection_mock = mocker.patch("data.storage.database.PostgreSQLConnection")
+    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
     storage = database.PostgreSQLStorage("db", "user", "pass")
     select_from_mock = mocker.patch.object(storage, "_select_from")
     insert_into_mock = mocker.patch.object(storage, "_insert_into")

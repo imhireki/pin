@@ -1,4 +1,4 @@
-from data.storage import file
+from storage import file
 
 
 class TestCSVStorage:
