@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from data.pin import Pin, PinData
+from pinterest.pin import Pin, PinData
 
 
 class TestPinData:
