@@ -1,7 +1,7 @@
 import pytest
 
-from web.browser import Firefox
-from web.www import Pinterest
+from browser import Firefox
+from pinterest.webpages import Pinterest
 import settings
 
 
