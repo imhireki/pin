@@ -1,6 +1,6 @@
 import pytest
 
-from web import browser
+import browser
 
 
 def test_browser_scroll_down(mocker):
@@ -44,7 +44,7 @@ def test_browser_shortcuts(mocker):
 
 @pytest.mark.parametrize("options", [{"wait_timeout": 12}, {"wait_timeout": 10}])
 def test_browser_set_wait_options(mocker, options):
-    mocker.patch("web.browser.ChromeDriver")
+    mocker.patch("browser.ChromeDriver")
     chromium = browser.Chromium()
 
     assert chromium._set_wait_options(options) == {"timeout": options["wait_timeout"]}
@@ -52,7 +52,7 @@ def test_browser_set_wait_options(mocker, options):
 
 @pytest.mark.parametrize("options", [{}, {"headless": False}])
 def test_browser_setup_driver(mocker, options):
-    wait = mocker.patch("web.browser.WebDriverWait")
+    wait = mocker.patch("browser.WebDriverWait")
 
     chromium = browser.Chromium(**options)
     set_driver = mocker.patch.object(chromium, "_set_driver")
@@ -75,8 +75,8 @@ def test_browser_setup_driver(mocker, options):
 class TestChromium:
     @pytest.mark.parametrize("headless", [True, False])
     def test_set_driver_options(self, mocker, headless):
-        mocker.patch("web.browser.ChromeDriver")
-        options = mocker.patch("web.browser.ChromeOptions").return_value
+        mocker.patch("browser.ChromeDriver")
+        options = mocker.patch("browser.ChromeOptions").return_value
 
         chromium = browser.Chromium()
 
@@ -89,7 +89,7 @@ class TestChromium:
         )
 
     def test_set_driver(self, mocker):
-        driver = mocker.patch("web.browser.ChromeDriver")
+        driver = mocker.patch("browser.ChromeDriver")
         options = mocker.Mock()
 
         chromium = browser.Chromium()
@@ -102,8 +102,8 @@ class TestChromium:
 class TestFirefox:
     @pytest.mark.parametrize("headless", [True, False])
     def test_set_driver_options(self, mocker, headless):
-        mocker.patch("web.browser.FirefoxDriver")
-        options = mocker.patch("web.browser.FirefoxOptions").return_value
+        mocker.patch("browser.FirefoxDriver")
+        options = mocker.patch("browser.FirefoxOptions").return_value
 
         firefox = browser.Firefox(headless=headless)
         driver_options = firefox._set_driver_options(dict(headless=headless))
@@ -113,7 +113,7 @@ class TestFirefox:
         assert options.profile == firefox._driver_data_directory
 
     def test_set_driver(self, mocker):
-        driver = mocker.patch("web.browser.FirefoxDriver")
+        driver = mocker.patch("browser.FirefoxDriver")
         options = mocker.Mock()
 
         firefox = browser.Firefox()
