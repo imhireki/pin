@@ -90,6 +90,53 @@ class TestLogin:
         auth_session.assert_called_with(10, 1)
 
 
+class TestSearchFeed:
+    def test_url(self, mocker):
+        search_feed = SearchFeed(mocker.Mock(), "sleep token")
+        assert search_feed.url == "https://www.pinterest.com/search/pins/?q=sleep+token"
+
+    def test_go_to_page(self, mocker):
+        browser = mocker.Mock()
+
+        search_feed = SearchFeed(browser, "sleep token")
+        search_feed.go_to_page()
+
+        browser.get.assert_called_with(search_feed.url)
+
+
+    def test_load_more(self, mocker):
+        browser = mocker.Mock()
+
+        search_feed = SearchFeed(browser, "sleep token")
+        search_feed.load_more()
+
+        browser.scroll_down.assert_called()
+
+    @pytest.mark.parametrize(
+        "html,ids",
+        [
+            ["", set()],
+            ["<html></html>", set()],
+            [
+                "<html><a href='/pin/123/'>link1</a><a href='/hmmm/'>link2</a></html>",
+                {"123"},
+            ],
+        ],
+    )
+    def test_find_pin_ids(self, mocker, html, ids):
+        visibility_of_element_located = mocker.patch(
+            EC + ".visibility_of_element_located"
+        )
+        browser = mocker.Mock()
+        browser.wait.until.return_value.get_attribute.return_value = html
+
+        pinterest = Pinterest(browser)
+        pids = pinterest.find_pin_ids()
+
+        visibility_of_element_located.assert_called_with(settings.ELEMENTS["PINS"])
+        assert pids == ids
+
+
 class TestPinterest:
     @pytest.mark.parametrize(
         "query, search_url",
