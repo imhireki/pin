@@ -1,8 +1,7 @@
 import pytest
 
 from browser import Firefox
-from pinterest.webpages import Pinterest
-import settings
+from pinterest.webpages import Login
 
 
 base_pin_data = {
@@ -27,11 +26,10 @@ def pinterest_session():
     browser = Firefox(binary="geckodriver", headless=True)
     browser.setup_driver()
 
-    pinterest = Pinterest(browser)
-    browser.get(settings.URLS["LOGIN"])
-    pinterest.close_google_login()
-    pinterest.perform_login()
+    login = Login(browser)
+    login.go_to_page()
+    login.authenticate()
 
-    session = pinterest.session
+    session = login.session
     browser.quit()
     return session
