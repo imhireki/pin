@@ -74,6 +74,62 @@ class Login(WebPage):
         self.authenticate_session(10, 1)
 
 
+class SearchFeed(WebPage):
+    def __init__(self, browser: IBrowser, query: str) -> None:
+        self._url = self._make_search_url(query)
+        super().__init__(browser)
+
+    @property
+    def url(self) -> str:
+        return self._url
+
+    @staticmethod
+    def _make_search_url(query: str) -> str:
+        return settings.URLS["SEARCH_PIN"] + "+".join(query.split())
+
+    def load_more(self) -> None:
+        self._browser.scroll_down(2, 3)
+
+    def find_pin_ids(self) -> set[str]:
+        urls = set()
+        for tag in self._find_a_tags():
+            try:
+                urls.add(self._extract_pin_id(tag))
+            except (TypeError, ValueError):
+                continue
+        return urls
+
+    def _find_a_tags(self) -> list:
+        pins_element = self._browser.wait.until(
+            EC.visibility_of_element_located(settings.ELEMENTS["PINS"])
+        )
+        pins_html = pins_element.get_attribute("outerHTML")
+
+        if not pins_html:
+            return []
+
+        return BeautifulSoup(pins_html, "html.parser").find_all("a")
+
+    @staticmethod
+    def _extract_pin_id(tag: _QueryResults) -> str:
+        if not isinstance(tag, Tag):
+            raise TypeError(
+                f"Expected an instance of Tag, but got {tag} {type(tag).__name__}"
+            )
+
+        href = tag.get("href")
+
+        pin_id_match = re.search(r"/pin/(\d+)/$", str(href))
+
+        if not pin_id_match:
+            raise ValueError(
+                "Invalid href: Expected a string matching '/pin/[0-9]+/$', "
+                f"but got {href} ({type(href).__name__})"
+            )
+
+        return pin_id_match.group(1)
+
+
 class Pinterest:
     def __init__(self, browser: IBrowser) -> None:
         self.browser = browser
