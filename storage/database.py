@@ -1,160 +1,133 @@
-from typing import Union, Any, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
-if TYPE_CHECKING:
-    from mysql.connector.cursor import MySQLCursor, CursorBase
-    from mysql.connector.connection_cext import CMySQLConnection
-import mysql.connector
+from psycopg.sql import SQL, Composed, Identifier, Placeholder
 import psycopg
 
-
-DBConnection = psycopg.Connection | mysql.connector.MySQLConnection
-DBCursor = Union[psycopg.Cursor, "MySQLCursor", "CursorBase"]
+from storage.utils import BaseMySQLConnection
 
 
-class ISQLConnection(ABC):
-    _connection: DBConnection
+type SQLConnection = psycopg.Connection | BaseMySQLConnection
 
-    def __init__(self, **connection_options: Any) -> None:
-        self._connection_options: dict[str, Any] = connection_options
+
+class IDatabaseStorage[Connection: SQLConnection](ABC):
+    def __init__(self, connection: Connection) -> None:
+        self._connection = connection
 
     @abstractmethod
-    def connect(self) -> None:
+    def select_cols_from_table(self, cols: list, table: str, query: dict) -> list:
         pass
 
-    def disconnect(self) -> None:
-        self._connection.close()
+    @staticmethod
+    def build_select_cols_from_table(cols: list, table: str, query: dict) -> Composed:
+        statement = SQL("SELECT ({}) FROM {} WHERE {} IN ({});")
 
-    def commit(self) -> None:
-        self._connection.commit()
+        processed_columns = [
+            Identifier(column) if column != "*" else SQL("*") for column in cols
+        ]
 
-    @property
-    def connection(self) -> DBConnection:
-        return self._connection
-
-    def get_cursor(self) -> DBCursor:
-        return self._connection.cursor()
-
-
-class PostgreSQLConnection(ISQLConnection):
-    _connection: psycopg.Connection
-
-    def connect(self) -> None:
-        self._connection = psycopg.connect(**self._connection_options)
-
-
-class MySQLConnection(ISQLConnection):
-    _connection: Union[mysql.connector.MySQLConnection, "CMySQLConnection"]
-
-    def connect(self) -> None:
-        self._connection = mysql.connector.connect(**self._connection_options)
-
-
-class IDatabaseStorage(ABC):
-    _connection: ISQLConnection
-
-    @property
-    def connection(self) -> ISQLConnection:
-        return self._connection
-
-    def _insert_into(self, table: str, columns: list[str], values: list[str]) -> None:
-        cursor = self._connection.get_cursor()
-
-        column_slots = (("{}, " * len(columns))[:-2]).format(*columns)
-        column_value_slots = ("%s, " * len(values))[:-2]
-
-        sql_statement = "INSERT INTO {} ({}) VALUES ({});".format(
-            table, column_slots, column_value_slots
+        composed = statement.format(
+            SQL(", ").join(processed_columns),
+            Identifier(table),
+            Identifier(query["col"]),
+            Placeholder(),
         )
-        cursor.execute(sql_statement, values)  # type: ignore
-        cursor.close()
-        self._connection.commit()
+        return composed
 
-    def _select_from(
-        self, table: str, column: str, query: dict[str, str | list[str]]
-    ) -> list[str] | None:
-        cursor = self._connection.get_cursor()
+    @abstractmethod
+    def insert_vals_into_cols(self, vals: list, cols: list, table: str) -> int:
+        pass
 
-        table_column = f"{table}.{column}"
-        column_value_slots = ("%s, " * len(query["value"]))[:-2]
-
-        sql_statement = "SELECT {} FROM {} WHERE {} IN ({});".format(
-            table_column, table, query["column"], column_value_slots
+    @staticmethod
+    def build_insert_vals_into_cols(vals: list, cols: list, table: str) -> Composed:
+        statement = SQL("INSERT INTO {} ({}) VALUES ({});")
+        composed = statement.format(
+            Identifier(table),
+            SQL(", ").join(map(Identifier, cols)),
+            SQL(", ").join(Placeholder() for _ in vals),
         )
+        return composed
 
-        cursor.execute(sql_statement, query["value"])  # type: ignore
-        fetched_rows = cursor.fetchall()
-        cursor.close()
-        return fetched_rows
-
-    def insert_pin(self, pin_data: dict) -> None:
-        hashtags = pin_data.pop("hashtags")
-        images = pin_data.pop("images")
-
-        self._insert_into(
-            table="pin",
-            columns=["url", "title", "description", "dominant_color"],
-            values=list(pin_data.values()),
+    def is_stored(self, external_id: str) -> bool:
+        rows = self.select_cols_from_table(
+            ["id"], "pin", {"col": "external_id", "val": external_id}
         )
+        return True if rows and rows[0] else False
 
-        selected_rows_with_id = self._select_from(
-            table="pin",
-            column="id",
-            query={"column": "url", "value": [pin_data["url"]]},
+    def insert_pin(
+        self,
+        id: str,
+        url: str,
+        title: str,
+        description: str,
+        dominant_color: str,
+        hashtags: list,
+        images: list,
+    ) -> None:
+        pid = self.insert_vals_into_cols(
+            [url, title, description, dominant_color, id],
+            ["url", "title", "description", "dominant_color", "external_id"],
+            "pin",
         )
-        pin_id = selected_rows_with_id[0][0]  # type: ignore
 
         for image in images:
-            self._insert_into(
-                table="image", columns=["pin_id", "url"], values=[pin_id, image]
-            )
+            self.insert_vals_into_cols([pid, image], ["pin_id", "url"], "image")
 
         for hashtag in hashtags:
-            self._insert_into(
-                table="hashtag", columns=["pin_id", "hashtag"], values=[pin_id, hashtag]
+            self.insert_vals_into_cols([pid, hashtag], ["pin_id", "hashtag"], "hashtag")
+
+
+class PostgreSQLStorage(IDatabaseStorage[psycopg.Connection]):
+    _connection: psycopg.Connection
+
+    def insert_vals_into_cols(self, vals: list, cols: list, table: str) -> int:
+        with self._connection.cursor() as cursor:
+            statement = self.build_insert_vals_into_cols(vals, cols, table)
+            cursor.execute(statement, vals)
+            self._connection.commit()
+
+            cursor.execute("SELECT LASTVAL()")
+            most_recent_row = cursor.fetchone()
+
+        if not most_recent_row or not most_recent_row[0]:
+            raise Exception("Failed to retrieve last row's id")
+        return most_recent_row[0]
+
+    def select_cols_from_table(self, cols: list, table: str, query: dict) -> list:
+        with self._connection.cursor() as cursor:
+            statement = self.build_select_cols_from_table(cols, table, query)
+            cursor.execute(statement, (query["val"],))
+            return cursor.fetchall()
+
+
+class MySQLStorage(IDatabaseStorage[BaseMySQLConnection]):
+    _connection: BaseMySQLConnection
+
+    @staticmethod
+    def _process_statement(statement: str, dquote=False, parenthesis=True) -> str:
+        if not dquote:
+            statement = statement.replace('"', "")
+        if not parenthesis:
+            statement = statement.replace("(", "", 1).replace(")", "", 1)
+        return statement
+
+    def insert_vals_into_cols(self, vals: list, cols: list, table: str) -> int:
+        with self._connection.cursor() as cursor:
+            statement = self.build_insert_vals_into_cols(vals, cols, table).as_string()
+            processed = self._process_statement(statement)
+            cursor.execute(processed, tuple(vals))
+
+            self._connection.commit()
+            row_id = cursor.lastrowid
+
+        if not row_id:
+            raise Exception("Failed to retrieve last row's id")
+        return row_id
+
+    def select_cols_from_table(self, cols: list, table: str, query: dict) -> list:
+        with self._connection.cursor() as cursor:
+            statement = self.build_select_cols_from_table(cols, table, query)
+            processed = self._process_statement(
+                statement.as_string(), parenthesis=False
             )
-
-    def query_pin(self, url: str) -> str:
-        selected_rows_with_url = self._select_from(
-            column="url", table="pin", query={"column": "url", "value": [url]}
-        )
-        if not selected_rows_with_url:
-            return ""
-        return selected_rows_with_url[0][0]
-
-
-class PostgreSQLStorage(IDatabaseStorage):
-    def __init__(
-        self,
-        database: str,
-        user: str,
-        password: str,
-        **extra_options: Any,
-    ) -> None:
-
-        self._connection = PostgreSQLConnection(
-            dbname=database,
-            user=user,
-            password=password,
-            host="localhost",
-            **extra_options,
-        )
-        self._connection.connect()
-
-
-class MySQLStorage(IDatabaseStorage):
-    def __init__(
-        self,
-        database: str,
-        user: str,
-        password: str,
-        **extra_options: Any,
-    ) -> None:
-
-        self._connection = MySQLConnection(
-            database=database,
-            user=user,
-            password=password,
-            **extra_options,
-        )
-        self._connection.connect()
+            cursor.execute(processed, (query["val"],))
+            return cursor.fetchall()
