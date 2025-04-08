@@ -1,102 +1,143 @@
-from storage import database
+import pytest
+
+from storage.database import PostgreSQLStorage, MySQLStorage
+from storage.utils import connect_to_postgres, connect_to_mysql
+import settings
 
 
-def test_postgresql_connection(mocker):
-    connect_mock = mocker.patch("psycopg.connect")
-    connection_options = {"dbname": "dbname", "password": 123}
+def test_build_select_cols_from_table():
+    select_url_from_pid = PostgreSQLStorage.build_select_cols_from_table(
+        ["url"],
+        "pin",
+        query={"col": "pid", "value": "123"},
+    ).as_string()
 
-    connection = database.PostgreSQLConnection(**connection_options)
-    connection.connect()
-    connection.commit()
-    connection.disconnect()
-    cursor = connection.get_cursor()
+    select_pid_from_url = PostgreSQLStorage.build_select_cols_from_table(
+        ["pid", "title"], "pin", query={"col": "url", "value": "/pin/123/"}
+    ).as_string()
 
-    assert connect_mock.call_args.kwargs == connection_options
-    assert connection.connection.commit.called
-    assert connection.connection.close.called
-    assert cursor == connection.connection.cursor.return_value
-
-
-def test_mysql_connection(mocker):
-    connect_mock = mocker.patch("mysql.connector.connect")
-    connection_options = {"database": "database", "password": 123}
-
-    connection = database.MySQLConnection(**connection_options)
-    connection.connect()
-    connection.commit()
-    connection.disconnect()
-    cursor = connection.get_cursor()
-
-    assert connect_mock.call_args.kwargs == connection_options
-    assert connection.connection.commit.called
-    assert connection.connection.close.called
-    assert cursor == connection.connection.cursor.return_value
-
-
-def test_postgre_sql_storage(mocker):
-    base_connection_options = {"user": "user", "password": 123}
-    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
-
-    postgresql_storage = database.PostgreSQLStorage(
-        database="db", **base_connection_options
+    assert select_url_from_pid == 'SELECT ("url") FROM "pin" WHERE "pid" IN (%s);'
+    assert (
+        select_pid_from_url == 'SELECT ("pid", "title") FROM "pin" WHERE "url" IN (%s);'
     )
 
-    assert connection_mock.call_args.kwargs == {
-        "dbname": "db",
-        "host": "localhost",
-        **base_connection_options,
+
+def test_build_insert_vals_into_cols():
+    insert_into = PostgreSQLStorage.build_insert_vals_into_cols(
+        ["/pin/123/", "pin_title"], ["url", "title"], "pin"
+    ).as_string()
+
+    assert insert_into == 'INSERT INTO "pin" ("url", "title") VALUES (%s, %s);'
+
+
+@pytest.mark.parametrize(
+    "rows, is_stored",
+    [
+        [[], False],
+        [
+            [
+                (),
+            ],
+            False,
+        ],
+        [["1"], True],
+    ],
+)
+def test_is_stored(mocker, rows, is_stored):
+    connection = mocker.Mock()
+    storage = PostgreSQLStorage(connection)
+    mocker.patch.object(storage, "select_cols_from_table", return_value=rows)
+
+    assert storage.is_stored("123456789") == is_stored
+
+
+def test_insert(mocker):
+    data = {
+        "id": "123",
+        "url": "/pin/123/",
+        "title": "t",
+        "description": "d",
+        "dominant_color": "#ff0000",
+        "hashtags": ["#a"],
+        "images": ["img.jpg"],
     }
-    assert postgresql_storage.connection is connection_mock.return_value
 
+    storage = PostgreSQLStorage(mocker.Mock())
+    insert_vals_into_cols = mocker.patch.object(storage, "insert_vals_into_cols")
+    pid = insert_vals_into_cols.return_value
 
-def test_mysql_storage(mocker):
-    connection_options = {
-        "database": "db",
-        "host": "localhost",
-        "user": "u",
-        "password": "pass",
-    }
-    connection_mock = mocker.patch("storage.database.MySQLConnection")
+    storage.insert_pin(**data)
 
-    mysql_storage = database.MySQLStorage(**connection_options)
-
-    assert connection_mock.call_args.kwargs == connection_options
-    assert mysql_storage.connection is connection_mock.return_value
-
-
-def test_sql_storage_query_pin(mocker):
-    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
-    stored_pin = "https://www.pinterest.com/pin/123/"
-
-    storage = database.PostgreSQLStorage("db", "user", "pass")
-    mocker.patch.object(
-        storage, "_select_from", mocker.Mock(return_value=[(stored_pin,)])
+    insert_vals_into_cols.assert_any_call(
+        ["/pin/123/", "t", "d", "#ff0000", "123"],
+        ["url", "title", "description", "dominant_color", "external_id"],
+        "pin",
     )
-    query_pin_result = storage.query_pin(stored_pin)
 
-    assert query_pin_result == stored_pin
+    insert_vals_into_cols.assert_any_call(
+        [pid, "#a"],
+        ["pin_id", "hashtag"],
+        "hashtag",
+    )
+
+    insert_vals_into_cols.assert_any_call(
+        [pid, "img.jpg"],
+        ["pin_id", "url"],
+        "image",
+    )
 
 
-def test_sql_storage_insert_pin(mocker, pin_data):
-    connection_mock = mocker.patch("storage.database.PostgreSQLConnection")
-    storage = database.PostgreSQLStorage("db", "user", "pass")
-    select_from_mock = mocker.patch.object(storage, "_select_from")
-    insert_into_mock = mocker.patch.object(storage, "_insert_into")
+@pytest.mark.postgres
+class TestPostgreSQLStorage:
+    def test_insert_values_into_columns(self):
+        with connect_to_postgres(**settings.TEST_DATABASE["POSTGRES"]) as connection:
+            storage = PostgreSQLStorage(connection)
 
-    storage.insert_pin(dict(**pin_data))
-    pin_id = select_from_mock.return_value[0][0]
+            cols = ["url", "title", "description", "dominant_color", "external_id"]
+            vals = ["/pin/2/", "title", "description", "#ffffff", "2"]
+            pid = storage.insert_vals_into_cols(vals, cols, "pin")
 
-    assert insert_into_mock.mock_calls[0].kwargs["values"] == [
-        pin_data["url"],
-        pin_data["title"],
-        pin_data["description"],
-        pin_data["dominant_color"],
-    ]
-    assert insert_into_mock.mock_calls[1].kwargs["values"] == [
-        pin_id,
-        pin_data["images"][0],
-    ]
-    assert insert_into_mock.mock_calls[2].kwargs["values"] == [
-        pin_id,
-        pin_data["hashtags"][0],
-    ]
+        assert pid and isinstance(pid, int)
+
+    def test_select_column_from_table(self):
+        with connect_to_postgres(**settings.TEST_DATABASE["POSTGRES"]) as connection:
+            storage = PostgreSQLStorage(connection)
+
+            rows = storage.select_cols_from_table(
+                ["dominant_color", "id"], "pin", {"col": "url", "val": "/pin/2/"}
+            )
+        assert rows and len(rows) > 0
+
+
+class TestMySQLStorage:
+    def test_process_statement(self, mocker):
+        storage = MySQLStorage(mocker.Mock())
+
+        processed = storage._process_statement(
+            'SELECT ("id", "title") FROM pin WHERE "url" IN (%s);',
+            dquote=False,
+            parenthesis=False,
+        )
+
+        assert processed == "SELECT id, title FROM pin WHERE url IN (%s);"
+
+    @pytest.mark.mysql
+    def test_insert_values_into_columns(self):
+        with connect_to_mysql(**settings.TEST_DATABASE["MYSQL"]) as connection:
+            storage = MySQLStorage(connection)
+
+            cols = ["url", "title", "description", "dominant_color", "external_id"]
+            vals = ["/pin/1/", "title", "description", "#ffffff", "1"]
+            pid = storage.insert_vals_into_cols(vals, cols, "pin")
+
+        assert pid and isinstance(pid, int)
+
+    @pytest.mark.mysql
+    def test_select_column_from_table(self):
+        with connect_to_mysql(**settings.TEST_DATABASE["MYSQL"]) as connection:
+            storage = MySQLStorage(connection)
+
+            rows = storage.select_cols_from_table(
+                ["dominant_color", "id"], "pin", {"col": "url", "val": "/pin/1/"}
+            )
+        assert rows and len(rows) > 0
