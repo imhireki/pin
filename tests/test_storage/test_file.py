@@ -1,27 +1,42 @@
+import pytest
+
 from storage import file
 
 
 class TestCSVStorage:
-    def test_query_pin(self, mocker, pin_data):
-        mocker.patch("csv.reader", return_value=[list(pin_data.values())])
+    @pytest.mark.parametrize(
+        "pin_id, data, result",
+        [
+            ("123", ["123", "title"], True),
+            ("123", ["2"], False),
+        ],
+    )
+    def test_is_stored(self, mocker, pin_id, data, result):
         mocker.patch("os.path.exists")
         mocker.patch("builtins.open")
+        mocker.patch("csv.reader", return_value=[data])
 
         storage = file.CSVStorage("filename")
-        query_pin_result = storage.query_pin(pin_data["url"])
+        assert storage.is_stored(pin_id) == result
 
-        assert query_pin_result == pin_data["url"]
-
-    def test_insert_pin(self, mocker, pin_data):
-        csv_writer_mock = mocker.patch("csv.writer")
+    def test_insert_pin(self, mocker):
+        writer = mocker.patch("csv.writer").return_value
         mocker.patch("builtins.open")
 
-        storage = file.CSVStorage("filename")
-        storage.insert_pin(pin_data)
+        data = {
+            "id": "123",
+            "url": "/pin/123",
+            "title": "t",
+            "description": "d",
+            "dominant_color": "#ff00ff",
+            "hashtags": ["#a"],
+            "images": ["img.png"],
+        }
 
-        assert csv_writer_mock.return_value.writerow.call_args.args[0] == list(
-            pin_data.values()
-        )
+        storage = file.CSVStorage("filename")
+        storage.insert_pin(**data)
+
+        writer.writerow.assert_called_with(list(data.values()))
 
 
 class TestJsonStorage:
