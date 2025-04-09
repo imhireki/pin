@@ -40,21 +40,31 @@ class TestCSVStorage:
 
 
 class TestJsonStorage:
-    def test_query_pin(self, mocker, pin_data):
-        mocker.patch("builtins.open")
+    def test_is_stored(self, mocker):
+        mocker.patch("os.path.exists", return_value=True)
+        data = '{"id": "1"}\n'
+        mocker.patch("builtins.open", mocker.mock_open(read_data=data))
 
         storage = file.JsonStorage("filename")
-        mocker.patch.object(storage, "_get_json_data", return_value=[pin_data])
-        query_pin_result = storage.query_pin(pin_data["url"])
+        assert storage.is_stored("1")
+        assert not storage.is_stored("2")
 
-        assert query_pin_result == pin_data["url"]
+    def test_insert_pin(self, mocker):
+        json_file = mocker.patch("builtins.open").return_value.__enter__.return_value
+        dumps = mocker.patch("json.dumps", return_value="")
 
-    def test_insert_pin(self, mocker, pin_data):
-        mocker.patch("builtins.open")
-        json_dump_mock = mocker.patch("json.dump")
+        new_data = {
+            "id": "123",
+            "url": "/pin/123",
+            "title": "t",
+            "description": "d",
+            "dominant_color": "#ff00ff",
+            "hashtags": ["#a"],
+            "images": ["img.png"],
+        }
 
         storage = file.JsonStorage("filename")
-        mocker.patch.object(storage, "_get_json_data", return_value=[pin_data])
-        storage.insert_pin(pin_data)
+        storage.insert_pin(**new_data)
 
-        assert [pin_data, pin_data] in json_dump_mock.call_args.args
+        dumps.assert_called_with(new_data)
+        json_file.write.assert_called_with(dumps.return_value + "\n")
