@@ -111,14 +111,14 @@ class Pin(IPin):
 
     @property
     def title(self) -> str:
-        title = self._raw["scraped"].get("title", "")
-        alt_title = self._raw["scraped"].get("closeup_unified_title", "")
+        title = self._raw["scraped"].get("title") or ""
+        alt_title = self._raw["scraped"].get("closeup_unified_title") or ""
         return title.strip() or alt_title.strip()
 
     @property
     def description(self) -> str:
-        description = self._raw["scraped"].get("description", "")
-        alt_description = self._raw["scraped"].get("closeup_unified_description", "")
+        description = self._raw["scraped"].get("description") or ""
+        alt_description = self._raw["scraped"].get("closeup_unified_description") or ""
         return description.strip() or alt_description.strip()
 
     @property
