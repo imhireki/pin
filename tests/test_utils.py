@@ -3,14 +3,17 @@ import pytest
 from utils import store_valid_pin
 
 
-@pytest.mark.parametrize("validity, data, is_stored", [
-    [True, {"url": "url"}, False],
-    [True, {"url": "url"}, True],
-    [False, {}, False],
-])
-def test_store_valid_pins(mocker, validity, data, is_stored):
+@pytest.mark.parametrize(
+    "validity, data, is_stored",
+    [
+        [True, {"url": "url"}, False],
+        [True, {"url": "url"}, True],
+        [False, {}, False],
+    ],
+)
+def test_store_valid_pin(mocker, validity, data, is_stored):
     storage = mocker.Mock()
-    storage.query_pin.return_value = None if not is_stored else "url"
+    storage.is_stored.return_value = is_stored
 
     mocker.patch("utils.PinData")
     pin = mocker.patch("utils.Pin").return_value
@@ -22,5 +25,4 @@ def test_store_valid_pins(mocker, validity, data, is_stored):
     if not validity or is_stored:
         storage.insert_pin.assert_not_called()
     else:
-        storage.insert_pin.assert_called_with(data)
-
+        storage.insert_pin.assert_called_with(**data)
