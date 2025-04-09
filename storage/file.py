@@ -53,26 +53,34 @@ class CSVStorage(IFileStorage):
 
 
 class JsonStorage(IFileStorage):
-    def __init__(self, filename: str) -> None:
-        self._filename: str = filename
+    def insert_pin(
+        self,
+        id: str,
+        url: str,
+        title: str,
+        description: str,
+        dominant_color: str,
+        hashtags: list,
+        images: list,
+    ) -> None:
+        data = {
+            "id": id,
+            "url": url,
+            "title": title,
+            "description": description,
+            "dominant_color": dominant_color,
+            "hashtags": hashtags,
+            "images": images,
+        }
+        with open(self._filename, "a") as json_file:
+            json_file.write(json.dumps(data) + "\n")
 
-    def _get_json_data(self) -> list[dict]:
+    def is_stored(self, external_id: str) -> bool:
         if not os.path.exists(self._filename):
-            return []
+            return False
 
         with open(self._filename, "r") as json_file:
-            json_data = json.load(json_file) or []
-        return json_data
-
-    def insert_pin(self, data: dict) -> None:
-        json_data = self._get_json_data()
-        json_data.append(data)
-
-        with open(self._filename, "w") as json_file:
-            json.dump(json_data, json_file)
-
-    def query_pin(self, url: str) -> str:
-        for data in self._get_json_data():
-            if data["url"] == url:
-                return url
-        return ""
+            for line in json_file:
+                if json.loads(line)["id"] == external_id:
+                    return True
+        return False
