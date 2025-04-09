@@ -5,12 +5,24 @@ import csv
 
 
 class IFileStorage(ABC):
+    def __init__(self, filename: str) -> None:
+        self._filename = filename
+
     @abstractmethod
-    def insert_pin(self, data: dict) -> None:
+    def insert_pin(
+        self,
+        id: str,
+        url: str,
+        title: str,
+        description: str,
+        dominant_color: str,
+        hashtags: list,
+        images: list,
+    ) -> None:
         pass
 
     @abstractmethod
-    def query_pin(self, url: str) -> str:
+    def is_stored(self, external_id: str) -> bool:
         pass
 
 
