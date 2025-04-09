@@ -27,23 +27,29 @@ class IFileStorage(ABC):
 
 
 class CSVStorage(IFileStorage):
-    def __init__(self, filename: str) -> None:
-        self._filename: str = filename
-
-    def insert_pin(self, data: dict) -> None:
+    def insert_pin(
+        self,
+        id: str,
+        url: str,
+        title: str,
+        description: str,
+        dominant_color: str,
+        hashtags: list,
+        images: list,
+    ) -> None:
         with open(self._filename, "a") as csv_file:
-            pin_writer = csv.writer(csv_file)
-            pin_writer.writerow(list(data.values()))
+            writer = csv.writer(csv_file)
+            data = [id, url, title, description, dominant_color, hashtags, images]
+            writer.writerow(data)
 
-    def query_pin(self, url: str) -> str:
+    def is_stored(self, external_id: str) -> bool:
         if not os.path.exists(self._filename):
-            return ""
-
+            return False
         with open(self._filename, "r") as csv_file:
             for data in csv.reader(csv_file):
-                if data[0] == url:
-                    return url
-            return ""
+                if data[0] == external_id:
+                    return True
+        return False
 
 
 class JsonStorage(IFileStorage):
