@@ -13,8 +13,7 @@ def store_valid_pin(storage: Storage, session: Session, pin_id: str) -> None:
 
     data = pin.fetch_data()
 
-    if not pin.is_valid() or storage.query_pin(data["url"]):
+    if not pin.is_valid() or storage.is_stored(pin_id):
         return
 
-    storage.insert_pin(data)
-
+    storage.insert_pin(**data)
