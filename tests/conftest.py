@@ -1,24 +1,7 @@
 import pytest
 
-from browser import Firefox
 from pinterest.webpages import Login
-
-
-base_pin_data = {
-    "title": "title",
-    "description": "description",
-    "dominant_color": "#ffffff",
-    "hashtags": ["hashtag"],
-}
-
-
-@pytest.fixture
-def pin_data():
-    return {
-        "url": "https://www.pinterest.com/pin/123/",
-        "images": ["img.jpg"],
-        **base_pin_data,
-    }
+from browser import Firefox
 
 
 @pytest.fixture(scope="session")
