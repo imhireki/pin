@@ -128,6 +128,39 @@ class TestPin:
 
         assert pin.is_valid() == is_valid
 
+    @pytest.mark.parametrize(
+        "scraped,result",
+        [
+            ({}, ""),
+            ({"title": None, "closeup_unified_title": None}, ""),
+            ({"title": " ", "closeup_unified_title": ""}, ""),
+            ({"title": "t", "closeup_unified_title": " "}, "t"),
+            ({"title": " ", "closeup_unified_title": "t"}, "t"),
+            ({"title": 270 * "t", "closeup_unified_title": "t"}, 255 * "t"),
+        ],
+    )
+    def test_title_and_description(self, mocker, scraped, result):
+        pin = Pin(mocker.Mock())
+        pin._raw = {"scraped": scraped}
+
+        assert pin.title == result
+
+    @pytest.mark.parametrize(
+        "scraped,hashtags",
+        [
+            ({}, []),
+            ({"hashtags": None}, []),
+            ({"hashtags": []}, []),
+            ({"hashtags": ["#a"]}, ["#a"]),
+            ({"hashtags": ["#" + 270 * "b"]}, ["#" + 254 * "b"]),
+        ],
+    )
+    def test_hashtags(self, mocker, scraped, hashtags):
+        pin = Pin(mocker.Mock())
+        pin._raw = {"scraped": scraped}
+
+        assert pin.hashtags == hashtags
+
 
 @pytest.mark.web
 def test_pin_single_image_source(pinterest_session):
