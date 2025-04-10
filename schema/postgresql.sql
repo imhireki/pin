@@ -4,6 +4,7 @@ CREATE TABLE public.pin (
 	title varchar(255) NULL,
 	description varchar(255) NULL,
 	dominant_color varchar(7) NULL,
+  external_id varchar(30) NOT NULL,
 	CONSTRAINT pk_pin PRIMARY KEY (id)
 );
 
