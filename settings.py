@@ -29,7 +29,9 @@ CREDENTIALS = {
 }
 
 DATABASE = {
-    "database": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME", ""),
+    "user": os.getenv("DB_USER", ""),
+    "password": os.getenv("DB_PASSWORD", ""),
 }
+
+TEST_DATABASE = { "POSTGRES": {}, "MYSQL": {} }
