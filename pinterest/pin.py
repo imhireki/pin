@@ -7,6 +7,13 @@ from requests import Session
 import settings
 
 
+class MaxLength:
+    TITLE = 255
+    DESCRIPTION = 255
+    DOMINANT_COLOR = 7
+    HASHTAG = 255
+
+
 class IPin(ABC):
     @abstractmethod
     def fetch_data(self) -> dict:
@@ -111,20 +118,30 @@ class Pin(IPin):
 
     @property
     def title(self) -> str:
-        title = self._raw["scraped"].get("title") or ""
-        alt_title = self._raw["scraped"].get("closeup_unified_title") or ""
-        return title.strip() or alt_title.strip()
+        title = (
+            self._raw["scraped"].get("title")
+            or self._raw["scraped"].get("closeup_unified_title")
+            or ""
+        )
+        return title.strip()[: MaxLength.TITLE]
 
     @property
     def description(self) -> str:
-        description = self._raw["scraped"].get("description") or ""
-        alt_description = self._raw["scraped"].get("closeup_unified_description") or ""
-        return description.strip() or alt_description.strip()
+        description = (
+            self._raw["scraped"].get("description")
+            or self._raw["scraped"].get("closeup_unified_description")
+            or ""
+        )
+        return description.strip()[: MaxLength.DESCRIPTION]
 
     @property
     def hashtags(self) -> list[str]:
-        return self._raw["scraped"].get("hashtags", [])
+        return [
+            hashtag[: MaxLength.HASHTAG]
+            for hashtag in self._raw["scraped"].get("hashtags", [])
+        ]
 
     @property
     def dominant_color(self) -> str:
-        return self._raw["scraped"].get("dominant_color", "")
+        dominant_color = self._raw["scraped"].get("dominant_color", "")
+        return dominant_color[: MaxLength.DOMINANT_COLOR]
