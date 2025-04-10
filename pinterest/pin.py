@@ -118,27 +118,24 @@ class Pin(IPin):
 
     @property
     def title(self) -> str:
-        title = (
-            self._raw["scraped"].get("title")
-            or self._raw["scraped"].get("closeup_unified_title")
-            or ""
-        )
-        return title.strip()[: MaxLength.TITLE]
+        title = self._raw["scraped"].get("title") or ""
+        alt_title = self._raw["scraped"].get("closeup_unified_title") or ""
+        return title.strip()[: MaxLength.TITLE] or alt_title.strip()[: MaxLength.TITLE]
 
     @property
     def description(self) -> str:
-        description = (
-            self._raw["scraped"].get("description")
-            or self._raw["scraped"].get("closeup_unified_description")
-            or ""
+        description = self._raw["scraped"].get("description") or ""
+        alt_description = self._raw["scraped"].get("closeup_unified_description") or ""
+        return (
+            description.strip()[: MaxLength.DESCRIPTION]
+            or alt_description.strip()[: MaxLength.DESCRIPTION]
         )
-        return description.strip()[: MaxLength.DESCRIPTION]
 
     @property
     def hashtags(self) -> list[str]:
         return [
             hashtag[: MaxLength.HASHTAG]
-            for hashtag in self._raw["scraped"].get("hashtags", [])
+            for hashtag in self._raw["scraped"].get("hashtags", []) or []
         ]
 
     @property
