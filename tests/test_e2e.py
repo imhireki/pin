@@ -7,17 +7,15 @@ from browser import Firefox
 
 @pytest.mark.web
 def test_scraping():
-    browser = Firefox(headless=True)
-    browser.setup_driver()
-
-    try:
-        login = Login(browser)
+    with Firefox(headless=False) as web_driver:
+        login = Login(web_driver)
         login.go_to_page()
+        login.close_google_login()
         login.authenticate()
 
         session = login.session
 
-        search_feed = SearchFeed(browser, "Frieren icon")
+        search_feed = SearchFeed(web_driver, "Frieren icon")
         search_feed.go_to_page()
         search_feed.load_more()
 
@@ -33,11 +31,5 @@ def test_scraping():
             data = pin.fetch_data()
 
             if not pin.is_valid():
-                return
+                continue
             assert data and data["id"]
-
-    except Exception as e:
-        print(e)
-        assert 0
-    finally:
-        browser.quit()

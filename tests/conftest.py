@@ -6,13 +6,11 @@ from browser import Firefox
 
 @pytest.fixture(scope="session")
 def pinterest_session():
-    browser = Firefox(binary="geckodriver", headless=True)
-    browser.setup_driver()
+    with Firefox(headless=False) as web_driver:
+        login = Login(web_driver)
+        login.go_to_page()
+        login.close_google_login()
+        login.authenticate()
 
-    login = Login(browser)
-    login.go_to_page()
-    login.authenticate()
-
-    session = login.session
-    browser.quit()
+        session = login.session
     return session
