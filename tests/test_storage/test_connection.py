@@ -1,6 +1,6 @@
 import pytest
 
-from storage.utils import connect_to_postgres, connect_to_mysql
+from storage.connection import connect_to_postgres, connect_to_mysql
 import settings
 
 

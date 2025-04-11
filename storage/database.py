@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from psycopg.sql import SQL, Composed, Identifier, Placeholder
 import psycopg
 
-from storage.utils import BaseMySQLConnection
+from storage.connection import BaseMySQLConnection
 
 
 type SQLConnection = psycopg.Connection | BaseMySQLConnection
